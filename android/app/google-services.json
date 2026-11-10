@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "290273908110",
+    "project_id": "gamesadmin-62604",
+    "storage_bucket": "gamesadmin-62604.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:290273908110:android:99f130e61979172c2800df",
+        "android_client_info": {
+          "package_name": "com.example.games_admin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6l1HL6rLbTLQRe31kFa1vSN0Eu4-alVM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/network/api_client.dart';
@@ -197,6 +198,17 @@ class _AdminAllOrdersPageState extends State<AdminAllOrdersPage> {
         '/orders/admin',
         queryParameters: queryParams,
       ).timeout(const Duration(seconds: 25));
+
+      try {
+        final prettyJson = const JsonEncoder.withIndent('  ').convert(res.data);
+        debugPrint('==================== [ADMIN ALL ORDERS RESPONSE] ====================');
+        debugPrint(prettyJson);
+        debugPrint('=====================================================================');
+      } catch (_) {
+        debugPrint('==================== [ADMIN ALL ORDERS RESPONSE (RAW)] ====================');
+        debugPrint(res.data.toString());
+        debugPrint('==========================================================================');
+      }
 
       if (res.data != null && mounted) {
         final rawData = res.data['data'];

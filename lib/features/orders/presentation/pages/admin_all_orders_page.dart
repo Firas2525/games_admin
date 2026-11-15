@@ -1721,15 +1721,80 @@ class _AdminAllOrdersPageState extends State<AdminAllOrdersPage> {
   }
 
   void _showProviderResponseDialog(Map<dynamic, dynamic> order) {
-    final orderId = order['orderId'] ?? order['id'] ?? '';
+    final orderId = (order['orderId'] ?? order['id'] ?? '').toString();
     final providerPayload = order['providerPayload'];
     final providerResponse = order['providerResponse'];
-    final failureReason = (order['errorMessage'] ??
-            order['providerResponse']?['message'] ??
+    final status = (order['status'] ?? '').toString().toLowerCase();
+    final isFailed = status == 'failed';
+    final refunded = order['refunded'] == true;
+
+    final errorPhase = (order['errorPhase'] ??
+            order['providerResponse']?['errorPhase'] ??
+            '')
+        .toString();
+
+    final failureReason = (order['failureReason'] ??
+            order['providerResponse']?['failureReason'] ??
+            order['errorMessage'] ??
+            order['providerResponse']?['cause'] ??
             order['providerResponse']?['error'] ??
             order['adminNote'] ??
             '')
         .toString();
+
+    final providerVerification = (order['providerVerification'] ??
+            order['providerResponse']?['providerVerification'] ??
+            '')
+        .toString();
+
+    final httpStatusCode = order['httpStatusCode'] ??
+        order['providerResponse']?['statusCode'] ??
+        order['statusCode'];
+
+    final targetUrl = (order['providerPayload']?['targetUrl'] ??
+            order['providerResponse']?['targetUrl'] ??
+            '')
+        .toString();
+
+    // Determine Stage & Reachability
+    String reachabilityTitle = 'حالة اتصال المزود';
+    String reachabilityDesc = '';
+    Color reachabilityColor = const Color(0xFF38BDF8);
+    IconData reachabilityIcon = Icons.info_outline_rounded;
+
+    final isTimeout = errorPhase == 'TIMEOUT' ||
+        failureReason.contains('مهلة') ||
+        failureReason.contains('35') ||
+        failureReason.contains('Timeout');
+
+    final isNetwork = errorPhase == 'NETWORK_ERROR' ||
+        failureReason.contains('fetch failed') ||
+        failureReason.contains('شبكة') ||
+        failureReason.contains('اتصال') ||
+        failureReason.contains('ECONNRESET') ||
+        failureReason.contains('ENOTFOUND');
+
+    if (errorPhase == 'PROVIDER_REJECTED' || (!isTimeout && !isNetwork && isFailed)) {
+      reachabilityTitle = 'وصل إلى سيرفر المزود (ورُفض من طرفهم)';
+      reachabilityDesc = 'قام سيرفر المزود باستلام الطلب رسمياً، لكنه رفض تنفيذه أو أرجع خطأ (مثل: رصيد غير كافٍ، معرف غير صالح، أو IP غير مصرح).';
+      reachabilityColor = const Color(0xFFF59E0B);
+      reachabilityIcon = Icons.cancel_outlined;
+    } else if (isTimeout) {
+      reachabilityTitle = 'انتهت المهلة (Timeout 35s) دون رد من المزود';
+      reachabilityDesc = 'سيرفر المزود علّق لأكثر من 35 ثانية ولم يُرجع رداً، وتم قطع الاتصال تلقائياً لحماية النظام.';
+      reachabilityColor = const Color(0xFFF97316);
+      reachabilityIcon = Icons.timer_off_outlined;
+    } else if (isNetwork) {
+      reachabilityTitle = 'لم يصل إلى سيرفر المزود (انقطاع شبكة أو جدار حماية)';
+      reachabilityDesc = 'تعذر الاتصال بسيرفر المزود (فشل الـ Socket أو جدار الحماية Cloudflare قطع الاتصال TCP RST قبل قراءة الرد).';
+      reachabilityColor = const Color(0xFFEF4444);
+      reachabilityIcon = Icons.wifi_off_rounded;
+    } else if (status == 'completed') {
+      reachabilityTitle = 'تم تنفيذ الطلب بنجاح لدى المزود';
+      reachabilityDesc = 'تم شحن الحساب واستلام رد التأكيد بنجاح من مزود الخدمة.';
+      reachabilityColor = const Color(0xFF10B981);
+      reachabilityIcon = Icons.check_circle_outline_rounded;
+    }
 
     String payloadText = providerPayload != null
         ? const JsonEncoder.withIndent('  ').convert(providerPayload)
@@ -1747,18 +1812,18 @@ class _AdminAllOrdersPageState extends State<AdminAllOrdersPage> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        minChildSize: 0.4,
-        maxChildSize: 0.95,
+        initialChildSize: 0.8,
+        minChildSize: 0.45,
+        maxChildSize: 0.96,
         expand: false,
         builder: (_, scrollController) => Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: ListView(
             controller: scrollController,
             children: [
               Center(
                 child: Container(
-                  width: 40,
+                  width: 44,
                   height: 4,
                   decoration: BoxDecoration(
                     color: Colors.white24,
@@ -1769,43 +1834,247 @@ class _AdminAllOrdersPageState extends State<AdminAllOrdersPage> {
               const SizedBox(height: 14),
               Row(
                 children: [
-                  const Icon(Icons.code_rounded, color: Color(0xFF38BDF8), size: 20),
+                  const Icon(Icons.analytics_rounded, color: Color(0xFF38BDF8), size: 22),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'بيانات واستجابة المزود للطلب #$orderId',
+                      'تشخيص الطلب ورد المزود للطلب #$orderId',
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                        fontSize: 14.5,
                       ),
                     ),
                   ),
                 ],
               ),
-              if (failureReason.isNotEmpty && failureReason != 'null') ...[
-                const SizedBox(height: 12),
+              const SizedBox(height: 14),
+
+              // --- 1. Reachability Banner ---
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: reachabilityColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: reachabilityColor.withValues(alpha: 0.45)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(reachabilityIcon, color: reachabilityColor, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            reachabilityTitle,
+                            style: TextStyle(
+                              color: reachabilityColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (reachabilityDesc.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        reachabilityDesc,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11.5,
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
+              // --- 2. Diagnosis Details ---
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E293B),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (failureReason.isNotEmpty && failureReason != 'null') ...[
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('📌 السبب الصريح: ',
+                              style: TextStyle(color: Colors.white54, fontSize: 11.5)),
+                          Expanded(
+                            child: Text(
+                              failureReason,
+                              style: const TextStyle(
+                                color: Color(0xFFFDA4AF),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Divider(color: Colors.white10, height: 16),
+                    ],
+                    if (providerVerification.isNotEmpty) ...[
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('🔍 فحص المزود: ',
+                              style: TextStyle(color: Colors.white54, fontSize: 11.5)),
+                          Expanded(
+                            child: Text(
+                              providerVerification,
+                              style: const TextStyle(
+                                color: Color(0xFF38BDF8),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 11.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Divider(color: Colors.white10, height: 16),
+                    ],
+                    Row(
+                      children: [
+                        const Text('🌐 كود الرد / الاتصال: ',
+                            style: TextStyle(color: Colors.white54, fontSize: 11.5)),
+                        Text(
+                          httpStatusCode != null
+                              ? 'HTTP $httpStatusCode'
+                              : (errorPhase.isNotEmpty ? errorPhase : 'N/A'),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontFamily: 'monospace',
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11.5,
+                          ),
+                        ),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: refunded
+                                ? const Color(0xFF10B981).withValues(alpha: 0.18)
+                                : Colors.amber.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            refunded ? 'تم استرجاع الرصيد للمستخدم ✅' : 'الرصيد: لم يُسترجع',
+                            style: TextStyle(
+                              color: refunded ? const Color(0xFF34D399) : Colors.amber,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // --- 3. Live Provider Verification Button ---
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF38BDF8),
+                  side: const BorderSide(color: Color(0xFF0284C7)),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                icon: const Icon(Icons.sync_rounded, size: 16),
+                label: const Text('التحقق المباشر من سيرفر المزود الآن برقم الطلب'),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _checkSingleOrderStatus(order);
+                },
+              ),
+
+              if (targetUrl.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      '🔗 الرابط المستهدف (Target API URL):',
+                      style: TextStyle(
+                        color: Color(0xFF94A3B8),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11.5,
+                      ),
+                    ),
+                    InkWell(
+                      onTap: () {
+                        Clipboard.setData(ClipboardData(text: targetUrl));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('تم نسخ الرابط 📋'),
+                            backgroundColor: Color(0xFF0284C7),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      },
+                      child: const Text('نسخ الرابط',
+                          style: TextStyle(color: Color(0xFF38BDF8), fontSize: 11)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.15),
+                    color: const Color(0xFF1E293B),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red.withValues(alpha: 0.4)),
+                    border: Border.all(color: Colors.white12),
                   ),
-                  child: Text(
-                    'رسالة الخطأ: $failureReason',
-                    style: const TextStyle(color: Color(0xFFFDA4AF), fontSize: 12),
+                  child: SelectableText(
+                    targetUrl,
+                    style: const TextStyle(
+                      color: Color(0xFFBAE6FD),
+                      fontSize: 10.5,
+                      fontFamily: 'monospace',
+                    ),
                   ),
                 ),
               ],
-              const SizedBox(height: 16),
-              const Text(
-                '📥 استجابة المزود (Provider Response):',
-                style: TextStyle(
-                  color: Color(0xFF10B981),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12.5,
-                ),
+
+              const SizedBox(height: 14),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    '📥 استجابة المزود المسجلة (Provider Response):',
+                    style: TextStyle(
+                      color: Color(0xFF10B981),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () {
+                      Clipboard.setData(ClipboardData(text: responseText));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('تم نسخ رد المزود 📋'),
+                          backgroundColor: Color(0xFF10B981),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                    child: const Text('نسخ',
+                        style: TextStyle(color: Color(0xFF10B981), fontSize: 11)),
+                  ),
+                ],
               ),
               const SizedBox(height: 6),
               Container(
@@ -1824,14 +2093,34 @@ class _AdminAllOrdersPageState extends State<AdminAllOrdersPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              const Text(
-                '📤 البيانات المرسلة إلى المزود (Provider Payload):',
-                style: TextStyle(
-                  color: Color(0xFF38BDF8),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12.5,
-                ),
+
+              const SizedBox(height: 14),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    '📤 البيانات المرسلة إلى المزود (Provider Payload):',
+                    style: TextStyle(
+                      color: Color(0xFF38BDF8),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () {
+                      Clipboard.setData(ClipboardData(text: payloadText));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('تم نسخ البيانات المرسلة 📋'),
+                          backgroundColor: Color(0xFF0284C7),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                    child: const Text('نسخ',
+                        style: TextStyle(color: Color(0xFF38BDF8), fontSize: 11)),
+                  ),
+                ],
               ),
               const SizedBox(height: 6),
               Container(
@@ -1851,26 +2140,6 @@ class _AdminAllOrdersPageState extends State<AdminAllOrdersPage> {
                 ),
               ),
               const SizedBox(height: 20),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0284C7),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                icon: const Icon(Icons.copy_rounded, size: 16),
-                label: const Text('نسخ رد المزود بالكامل'),
-                onPressed: () {
-                  Clipboard.setData(ClipboardData(text: responseText));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('تم نسخ رد المزود إلى الحافظة 📋'),
-                      backgroundColor: Color(0xFF10B981),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                },
-              ),
             ],
           ),
         ),

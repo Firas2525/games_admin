@@ -1944,40 +1944,62 @@ class _AdminAllOrdersPageState extends State<AdminAllOrdersPage> {
                       ),
                       const Divider(color: Colors.white10, height: 16),
                     ],
-                    Row(
-                      children: [
-                        const Text('🌐 كود الرد / الاتصال: ',
-                            style: TextStyle(color: Colors.white54, fontSize: 11.5)),
-                        Text(
-                          httpStatusCode != null
-                              ? 'HTTP $httpStatusCode'
-                              : (errorPhase.isNotEmpty ? errorPhase : 'N/A'),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontFamily: 'monospace',
-                            fontWeight: FontWeight.bold,
-                            fontSize: 11.5,
-                          ),
-                        ),
-                        const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: refunded
-                                ? const Color(0xFF10B981).withValues(alpha: 0.18)
-                                : Colors.amber.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            refunded ? 'تم استرجاع الرصيد للمستخدم ✅' : 'الرصيد: لم يُسترجع',
-                            style: TextStyle(
-                              color: refunded ? const Color(0xFF34D399) : Colors.amber,
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.bold,
+                    Builder(
+                      builder: (_) {
+                        final displayCode = httpStatusCode != null
+                            ? 'HTTP $httpStatusCode'
+                            : (isTimeout
+                                ? '504 (Timeout)'
+                                : (isNetwork
+                                    ? 'لا يوجد (انقطاع اتصال)'
+                                    : (errorPhase.isNotEmpty ? errorPhase : 'لا يوجد استجابة')));
+
+                        final String walletStatusText;
+                        final Color walletBadgeColor;
+                        final Color walletTextColor;
+
+                        if (isFailed || refunded) {
+                          walletStatusText = 'لم يُخصم أي رصيد (المبلغ في المحفظة) ✅';
+                          walletBadgeColor = const Color(0xFF10B981).withValues(alpha: 0.18);
+                          walletTextColor = const Color(0xFF34D399);
+                        } else {
+                          walletStatusText = 'تم الخصم';
+                          walletBadgeColor = const Color(0xFF0284C7).withValues(alpha: 0.18);
+                          walletTextColor = const Color(0xFF38BDF8);
+                        }
+
+                        return Row(
+                          children: [
+                            const Text('🌐 كود الرد / الاتصال: ',
+                                style: TextStyle(color: Colors.white54, fontSize: 11.5)),
+                            Text(
+                              displayCode,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontFamily: 'monospace',
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11,
+                              ),
                             ),
-                          ),
-                        ),
-                      ],
+                            const Spacer(),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: walletBadgeColor,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                walletStatusText,
+                                style: TextStyle(
+                                  color: walletTextColor,
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ],
                 ),

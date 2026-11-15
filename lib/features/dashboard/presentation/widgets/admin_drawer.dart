@@ -18,6 +18,7 @@ import 'package:games_admin/features/competitions/presentation/pages/admin_compe
 import 'package:games_admin/features/categories/presentation/pages/admin_categories_page.dart';
 import 'package:games_admin/features/categories/presentation/pages/admin_organization_page.dart';
 import 'package:games_admin/features/maintenance/presentation/pages/admin_maintenance_page.dart';
+import 'package:games_admin/features/app_update/presentation/pages/admin_app_update_page.dart';
 import 'package:games_admin/features/products/presentation/pages/admin_custom_products_page.dart';
 import 'package:games_admin/features/auth/presentation/bloc/admin_auth_bloc.dart';
 import 'package:games_admin/features/auth/presentation/bloc/admin_auth_event.dart';
@@ -183,6 +184,22 @@ class AdminDrawer extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (_) => const AdminMaintenancePage(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  // App Update (تحديث التطبيق)
+                  _buildActionItem(
+                    icon: Icons.system_update_rounded,
+                    iconColor: const Color(0xFF10B981),
+                    title: 'تحديث التطبيق (App Update)',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AdminAppUpdatePage(),
                         ),
                       );
                     },

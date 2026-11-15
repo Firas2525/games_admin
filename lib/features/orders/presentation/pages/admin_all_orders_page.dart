@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:async';
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/network/api_client.dart';
@@ -197,6 +200,8 @@ class _AdminAllOrdersPageState extends State<AdminAllOrdersPage> {
         '/orders/admin',
         queryParameters: queryParams,
       ).timeout(const Duration(seconds: 25));
+
+      _debugPrintOrdersAndProviderResponse(res.data);
 
       if (res.data != null && mounted) {
         final rawData = res.data['data'];
@@ -1539,7 +1544,22 @@ class _AdminAllOrdersPageState extends State<AdminAllOrdersPage> {
                           onPressed: () => _copyOrderReceipt(order),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF38BDF8),
+                            side: BorderSide(color: const Color(0xFF38BDF8).withValues(alpha: 0.35)),
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            minimumSize: const Size(0, 32),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          icon: const Icon(Icons.code_rounded, size: 12),
+                          label: const Text('رد المزود', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold)),
+                          onPressed: () => _showProviderResponseDialog(order),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
                       Expanded(
                         child: ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
@@ -1698,5 +1718,237 @@ class _AdminAllOrdersPageState extends State<AdminAllOrdersPage> {
         ),
       ),
     );
+  }
+
+  void _showProviderResponseDialog(Map<dynamic, dynamic> order) {
+    final orderId = order['orderId'] ?? order['id'] ?? '';
+    final providerPayload = order['providerPayload'];
+    final providerResponse = order['providerResponse'];
+    final failureReason = (order['errorMessage'] ??
+            order['providerResponse']?['message'] ??
+            order['providerResponse']?['error'] ??
+            order['adminNote'] ??
+            '')
+        .toString();
+
+    String payloadText = providerPayload != null
+        ? const JsonEncoder.withIndent('  ').convert(providerPayload)
+        : 'لا توجد بيانات مرسلة مسجلة';
+
+    String responseText = providerResponse != null
+        ? const JsonEncoder.withIndent('  ').convert(providerResponse)
+        : 'لا توجد استجابة مسجلة من المزود';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.4,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (_, scrollController) => Container(
+          padding: const EdgeInsets.all(16),
+          child: ListView(
+            controller: scrollController,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  const Icon(Icons.code_rounded, color: Color(0xFF38BDF8), size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'بيانات واستجابة المزود للطلب #$orderId',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              if (failureReason.isNotEmpty && failureReason != 'null') ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red.withValues(alpha: 0.4)),
+                  ),
+                  child: Text(
+                    'رسالة الخطأ: $failureReason',
+                    style: const TextStyle(color: Color(0xFFFDA4AF), fontSize: 12),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+              const Text(
+                '📥 استجابة المزود (Provider Response):',
+                style: TextStyle(
+                  color: Color(0xFF10B981),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12.5,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E293B),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.white12),
+                ),
+                child: SelectableText(
+                  responseText,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                '📤 البيانات المرسلة إلى المزود (Provider Payload):',
+                style: TextStyle(
+                  color: Color(0xFF38BDF8),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12.5,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E293B),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.white12),
+                ),
+                child: SelectableText(
+                  payloadText,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0284C7),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                icon: const Icon(Icons.copy_rounded, size: 16),
+                label: const Text('نسخ رد المزود بالكامل'),
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: responseText));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('تم نسخ رد المزود إلى الحافظة 📋'),
+                      backgroundColor: Color(0xFF10B981),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _debugPrintOrdersAndProviderResponse(dynamic responseData) {
+    try {
+      final prettyJson = const JsonEncoder.withIndent('  ').convert(responseData);
+
+      Zone.root.print('\n==================== [ADMIN ALL ORDERS FULL RESPONSE] ====================');
+      _printLongString(prettyJson);
+      Zone.root.print('========================================================================\n');
+
+      developer.log(prettyJson, name: 'ADMIN_ALL_ORDERS_RESPONSE');
+
+      final rawData = responseData?['data'];
+      List<dynamic> ordersList = [];
+      if (rawData is Map) {
+        ordersList = rawData['orders'] as List? ?? [];
+      } else if (rawData is List) {
+        ordersList = rawData;
+      }
+
+      if (ordersList.isNotEmpty) {
+        Zone.root.print('\n🔍 ==================== [PROVIDER RESPONSES ANALYSIS] ====================');
+        for (int i = 0; i < ordersList.length; i++) {
+          final order = ordersList[i];
+          if (order is Map) {
+            final orderId = order['orderId'] ?? order['id'] ?? 'N/A';
+            final productName = order['productName'] ?? 'N/A';
+            final status = order['status'] ?? 'N/A';
+            final source = order['source'] ?? 'custom';
+            final providerOrderId = order['providerOrderId'] ?? 'None';
+            final providerPayload = order['providerPayload'];
+            final providerResponse = order['providerResponse'];
+            final errorMessage = order['errorMessage'];
+            final targetId = order['targetId'] ?? '';
+
+            Zone.root.print('--------------------------------------------------');
+            Zone.root.print('📦 [طلب #${i + 1}] ID: $orderId | الحالة: $status');
+            Zone.root.print('   📌 المنتج: $productName | آيدي اللاعب: $targetId');
+            Zone.root.print('   🌐 المزود (Source): $source | رقم المزود: $providerOrderId');
+
+            if (errorMessage != null && errorMessage.toString().trim().isNotEmpty) {
+              Zone.root.print('   ⚠️ رسالة الخطأ (Error Message): $errorMessage');
+            }
+
+            if (providerPayload != null) {
+              final payloadStr = const JsonEncoder.withIndent('     ').convert(providerPayload);
+              Zone.root.print('   📤 بيانات الطلب المرسلة للمزود (Provider Payload):');
+              _printLongString('     $payloadStr');
+            } else {
+              Zone.root.print('   📤 بيانات الطلب المرسلة للمزود: null');
+            }
+
+            if (providerResponse != null) {
+              final respStr = const JsonEncoder.withIndent('     ').convert(providerResponse);
+              Zone.root.print('   📥 رد واستجابة المزود (Provider Response):');
+              _printLongString('     $respStr');
+            } else {
+              Zone.root.print('   📥 رد واستجابة المزود: null (لم يُسجل رد من المزود أو طلب مخصص)');
+            }
+          }
+        }
+        Zone.root.print('========================================================================\n');
+      }
+    } catch (e) {
+      Zone.root.print('[ADMIN ORDERS LOG ERROR]: $e');
+    }
+  }
+
+  void _printLongString(String text) {
+    const int chunkSize = 800;
+    for (int i = 0; i < text.length; i += chunkSize) {
+      final end = (i + chunkSize < text.length) ? i + chunkSize : text.length;
+      Zone.root.print(text.substring(i, end));
+    }
   }
 }

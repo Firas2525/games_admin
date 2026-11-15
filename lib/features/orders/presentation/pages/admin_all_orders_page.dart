@@ -1968,34 +1968,50 @@ class _AdminAllOrdersPageState extends State<AdminAllOrdersPage> {
                           walletTextColor = const Color(0xFF38BDF8);
                         }
 
-                        return Row(
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('🌐 كود الرد / الاتصال: ',
-                                style: TextStyle(color: Colors.white54, fontSize: 11.5)),
-                            Text(
-                              displayCode,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontFamily: 'monospace',
-                                fontWeight: FontWeight.bold,
-                                fontSize: 11,
-                              ),
-                            ),
-                            const Spacer(),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: walletBadgeColor,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                walletStatusText,
-                                style: TextStyle(
-                                  color: walletTextColor,
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.bold,
+                            Row(
+                              children: [
+                                const Text('🌐 كود الرد / الاتصال: ',
+                                    style: TextStyle(color: Colors.white54, fontSize: 11.5)),
+                                Expanded(
+                                  child: Text(
+                                    displayCode,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontFamily: 'monospace',
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 11,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
-                              ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                const Text('💰 حالة الرصيد: ',
+                                    style: TextStyle(color: Colors.white54, fontSize: 11.5)),
+                                Expanded(
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: walletBadgeColor,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      walletStatusText,
+                                      style: TextStyle(
+                                        color: walletTextColor,
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         );

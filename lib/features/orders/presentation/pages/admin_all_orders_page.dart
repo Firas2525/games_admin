@@ -199,7 +199,7 @@ class _AdminAllOrdersPageState extends State<AdminAllOrdersPage> {
       final res = await sl<ApiClient>().get(
         '/orders/admin',
         queryParameters: queryParams,
-      ).timeout(const Duration(seconds: 25));
+      ).timeout(const Duration(seconds: 60));
 
       _debugPrintOrdersAndProviderResponse(res.data);
 

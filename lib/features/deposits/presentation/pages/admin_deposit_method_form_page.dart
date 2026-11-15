@@ -25,6 +25,8 @@ class _AdminDepositMethodFormPageState extends State<AdminDepositMethodFormPage>
   late TextEditingController _minDepositController;
   late TextEditingController _maxDepositController;
   late TextEditingController _instructionsController;
+  late TextEditingController _currencyUnitController;
+  late TextEditingController _ratePerUsdController;
 
   late String _selectedCurrency;
   late String _selectedIcon;
@@ -58,8 +60,14 @@ class _AdminDepositMethodFormPageState extends State<AdminDepositMethodFormPage>
     _minDepositController = TextEditingController(text: (m?['minDeposit'] ?? 1).toString());
     _maxDepositController = TextEditingController(text: (m?['maxDeposit'] ?? 100000).toString());
     _instructionsController = TextEditingController(text: m?['instructions'] ?? '');
+    _currencyUnitController = TextEditingController(text: m?['currencyUnit'] ?? '');
+    _ratePerUsdController = TextEditingController(
+      text: (m?['ratePerUsd'] != null && (m?['ratePerUsd'] as num) > 0)
+          ? m!['ratePerUsd'].toString()
+          : '1310',
+    );
 
-    _selectedCurrency = m?['currency'] ?? 'USD';
+    _selectedCurrency = m?['currencyType'] ?? (m?['isCustomCurrency'] == true ? 'OTHER' : (m?['currency'] ?? 'USD'));
     _selectedIcon = m?['iconKey'] ?? 'card';
     _isEnabled = m?['isEnabled'] ?? true;
     _requiresReceiptImage = m?['requiresReceiptImage'] ?? false;
@@ -76,6 +84,8 @@ class _AdminDepositMethodFormPageState extends State<AdminDepositMethodFormPage>
     _minDepositController.dispose();
     _maxDepositController.dispose();
     _instructionsController.dispose();
+    _currencyUnitController.dispose();
+    _ratePerUsdController.dispose();
     super.dispose();
   }
 
@@ -144,12 +154,30 @@ class _AdminDepositMethodFormPageState extends State<AdminDepositMethodFormPage>
       return;
     }
 
+    final isCustom = _selectedCurrency == 'OTHER';
+    final currencyUnit = _currencyUnitController.text.trim();
+    final ratePerUsd = double.tryParse(_ratePerUsdController.text.trim()) ?? 1.0;
+
+    if (isCustom && (currencyUnit.isEmpty || ratePerUsd <= 0)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('يرجى تحديد اسم الوحدة وسعر التحويل مقابل الدولار بشكل صحيح'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
     setState(() => _isSaving = true);
 
     final payload = {
       'title': title,
       'imageUrl': _imageUrlController.text.trim(),
-      'currency': _selectedCurrency,
+      'currency': isCustom ? currencyUnit : _selectedCurrency,
+      'currencyType': _selectedCurrency,
+      'isCustomCurrency': isCustom,
+      'currencyUnit': isCustom ? currencyUnit : '',
+      'ratePerUsd': isCustom ? ratePerUsd : 1.0,
       'iconKey': _selectedIcon,
       'account': _accountController.text.trim(),
       'address': address,
@@ -243,14 +271,115 @@ class _AdminDepositMethodFormPageState extends State<AdminDepositMethodFormPage>
                       title: 'دولار أمريكي (USD) 💵',
                       color: const Color(0xFF10B981),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
                     _buildCurrencyChip(
                       code: 'SYP',
                       title: 'ليرة سورية (SYP) 🏛️',
                       color: const Color(0xFFEF4444),
                     ),
+                    const SizedBox(width: 8),
+                    _buildCurrencyChip(
+                      code: 'OTHER',
+                      title: 'عملة أخرى 🌍',
+                      color: const Color(0xFF8B5CF6),
+                    ),
                   ],
                 ),
+                if (_selectedCurrency == 'OTHER') ...[
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF8B5CF6).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.35)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.currency_exchange_rounded, color: Color(0xFFA78BFA), size: 18),
+                            SizedBox(width: 8),
+                            Text(
+                              'إعدادات العملة المخصصة وسعر الصرف مقابل الدولار',
+                              style: TextStyle(color: Color(0xFFA78BFA), fontWeight: FontWeight.bold, fontSize: 13),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: TextFormField(
+                                controller: _currencyUnitController,
+                                style: const TextStyle(color: Colors.white, fontSize: 14),
+                                decoration: _inputDecoration(
+                                  label: 'اسم العملة / رمز الوحدة (مثال: دينار عراقي أو IQD) *',
+                                  icon: Icons.title_rounded,
+                                ),
+                                onChanged: (_) => setState(() {}),
+                                validator: (v) => (_selectedCurrency == 'OTHER' && (v == null || v.trim().isEmpty))
+                                    ? 'يرجى إدخال اسم الوحدة'
+                                    : null,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              flex: 2,
+                              child: TextFormField(
+                                controller: _ratePerUsdController,
+                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 14, fontWeight: FontWeight.bold),
+                                decoration: _inputDecoration(
+                                  label: 'كم وحدة = 1 دولار؟ *',
+                                  icon: Icons.calculate_outlined,
+                                ),
+                                onChanged: (_) => setState(() {}),
+                                validator: (v) {
+                                  if (_selectedCurrency != 'OTHER') return null;
+                                  final numVal = double.tryParse(v?.trim() ?? '');
+                                  if (numVal == null || numVal <= 0) return 'قيمة غير صالحة';
+                                  return null;
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        // Live formula preview explanation
+                        Builder(builder: (context) {
+                          final unit = _currencyUnitController.text.trim().isNotEmpty
+                              ? _currencyUnitController.text.trim()
+                              : 'الوحدة';
+                          final rate = double.tryParse(_ratePerUsdController.text.trim()) ?? 1310.0;
+                          final exampleDeposit = (rate * 10).round();
+                          return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0F172A),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.white12),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFF38BDF8)),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    '💡 المعادلة: كل $rate $unit = 1.00 \$ دولار. عندما يدخل الزبون $exampleDeposit $unit، سيتم تحويل 10.00 \$ لحسابه (أو ما يعادلها بالليرة السورية حسب سعر صرف النظام إذا كان حسابه ليرة).',
+                                    style: const TextStyle(color: Colors.white70, fontSize: 11, height: 1.35),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 16),
 
                 // Icon / Type Selection
@@ -827,14 +956,22 @@ class _AdminDepositMethodFormPageState extends State<AdminDepositMethodFormPage>
                   decoration: BoxDecoration(
                     color: _selectedCurrency == 'USD'
                         ? const Color(0xFF10B981).withValues(alpha: 0.25)
-                        : const Color(0xFFEF4444).withValues(alpha: 0.25),
+                        : _selectedCurrency == 'SYP'
+                            ? const Color(0xFFEF4444).withValues(alpha: 0.25)
+                            : const Color(0xFF8B5CF6).withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: _selectedCurrency == 'USD' ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                      color: _selectedCurrency == 'USD'
+                          ? const Color(0xFF10B981)
+                          : _selectedCurrency == 'SYP'
+                              ? const Color(0xFFEF4444)
+                              : const Color(0xFF8B5CF6),
                     ),
                   ),
                   child: Text(
-                    _selectedCurrency,
+                    _selectedCurrency == 'OTHER'
+                        ? (_currencyUnitController.text.isNotEmpty ? _currencyUnitController.text : 'عملة أخرى')
+                        : _selectedCurrency,
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white),
                   ),
                 ),

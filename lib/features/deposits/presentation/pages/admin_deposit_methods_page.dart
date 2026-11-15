@@ -197,10 +197,12 @@ class _AdminDepositMethodsPageState extends State<AdminDepositMethodsPage> {
 
     final filteredMethods = _methods.where((m) {
       // Filter tab
+      final isCustom = m['currencyType'] == 'OTHER' || m['isCustomCurrency'] == true;
       if (_activeFilter == 'active' && m['isEnabled'] != true) return false;
       if (_activeFilter == 'disabled' && m['isEnabled'] == true) return false;
       if (_activeFilter == 'usd' && (m['currency'] ?? 'USD') != 'USD') return false;
       if (_activeFilter == 'syp' && (m['currency'] ?? 'USD') != 'SYP') return false;
+      if (_activeFilter == 'other' && !isCustom) return false;
 
       // Search query
       if (_searchQuery.trim().isEmpty) return true;
@@ -366,6 +368,8 @@ class _AdminDepositMethodsPageState extends State<AdminDepositMethodsPage> {
                         _buildFilterPill('usd', 'دولار USD', Icons.attach_money_rounded, activeColor: const Color(0xFF38BDF8)),
                         const SizedBox(width: 8),
                         _buildFilterPill('syp', 'ليرة سورية SYP', Icons.account_balance_outlined, activeColor: const Color(0xFFF59E0B)),
+                        const SizedBox(width: 8),
+                        _buildFilterPill('other', 'عملات أخرى 🌍', Icons.language_rounded, activeColor: const Color(0xFF8B5CF6)),
                       ],
                     ),
                   ),
@@ -521,7 +525,10 @@ class _AdminDepositMethodsPageState extends State<AdminDepositMethodsPage> {
     final minDeposit = m['minDeposit'] ?? 1;
     final maxDeposit = m['maxDeposit'] ?? 100000;
     final instructions = m['instructions'] ?? '';
-    final iconKey = m['iconKey'];
+    final isCustom = m['currencyType'] == 'OTHER' || m['isCustomCurrency'] == true;
+    final currencyUnit = (m['currencyUnit'] ?? '').toString();
+    final ratePerUsd = m['ratePerUsd'];
+    final displayUnit = isCustom && currencyUnit.isNotEmpty ? currencyUnit : currency;
     final imageUrl = m['imageUrl']?.toString() ?? m['iconUrl']?.toString() ?? '';
 
     final brandColor = _getPrimaryColor(iconKey);
@@ -599,19 +606,33 @@ class _AdminDepositMethodsPageState extends State<AdminDepositMethodsPage> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: currency == 'SYP'
-                                  ? const Color(0xFFEF4444).withValues(alpha: 0.2)
-                                  : const Color(0xFF10B981).withValues(alpha: 0.2),
+                              color: isCustom
+                                  ? const Color(0xFF8B5CF6).withValues(alpha: 0.2)
+                                  : currency == 'SYP'
+                                      ? const Color(0xFFEF4444).withValues(alpha: 0.2)
+                                      : const Color(0xFF10B981).withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(6),
                               border: Border.all(
-                                color: currency == 'SYP' ? const Color(0xFFEF4444) : const Color(0xFF10B981),
+                                color: isCustom
+                                    ? const Color(0xFF8B5CF6)
+                                    : currency == 'SYP'
+                                        ? const Color(0xFFEF4444)
+                                        : const Color(0xFF10B981),
                                 width: 0.8,
                               ),
                             ),
                             child: Text(
-                              currency == 'SYP' ? 'ليرة SYP' : 'دولار USD',
+                              isCustom
+                                  ? '$displayUnit (1\$ = $ratePerUsd)'
+                                  : currency == 'SYP'
+                                      ? 'ليرة SYP'
+                                      : 'دولار USD',
                               style: TextStyle(
-                                color: currency == 'SYP' ? const Color(0xFFFCA5A5) : const Color(0xFF6EE7B7),
+                                color: isCustom
+                                    ? const Color(0xFFC4B5FD)
+                                    : currency == 'SYP'
+                                        ? const Color(0xFFFCA5A5)
+                                        : const Color(0xFF6EE7B7),
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -737,7 +758,7 @@ class _AdminDepositMethodsPageState extends State<AdminDepositMethodsPage> {
                     border: Border.all(color: Colors.white10),
                   ),
                   child: Text(
-                    'الحدود: $minDeposit إلى $maxDeposit $currency',
+                    'الحدود: $minDeposit إلى $maxDeposit $displayUnit',
                     style: TextStyle(color: Colors.grey.shade300, fontSize: 11),
                   ),
                 ),

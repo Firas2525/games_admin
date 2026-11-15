@@ -71,6 +71,11 @@ class _AdminDepositsPageState extends State<AdminDepositsPage> {
     final userEmail = user?['email'] ?? dep['userEmail'] ?? '';
     final netAmount = dep['netAmount'] ?? dep['amount'];
     final currency = dep['creditCurrency'] ?? 'USD';
+    final isCustom = dep['currencyType'] == 'OTHER' || dep['ratePerUsd'] != null;
+    final currencyUnit = dep['currencyUnit'] ?? dep['sourceCurrency'] ?? '';
+    final ratePerUsd = dep['ratePerUsd'];
+    final amountInUsd = dep['amountInUsd'];
+    final sourceAmount = dep['amount'];
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -123,6 +128,36 @@ class _AdminDepositsPageState extends State<AdminDepositsPage> {
                           Text(userEmail, style: TextStyle(color: Colors.grey.shade400, fontSize: 11.5)),
                         ],
                       ),
+                    ],
+                    if (isCustom) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('المبلغ المحول بالعملة:', style: TextStyle(color: Colors.white60, fontSize: 12)),
+                          Text('$sourceAmount $currencyUnit', style: const TextStyle(color: Color(0xFFC4B5FD), fontWeight: FontWeight.bold, fontSize: 12.5)),
+                        ],
+                      ),
+                      if (ratePerUsd != null) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('سعر الصرف للدولار:', style: TextStyle(color: Colors.white60, fontSize: 11.5)),
+                            Text('1\$ = $ratePerUsd $currencyUnit', style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 11.5)),
+                          ],
+                        ),
+                      ],
+                      if (amountInUsd != null) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('القيمة المقابلة بالدولار:', style: TextStyle(color: Colors.white60, fontSize: 11.5)),
+                            Text('$amountInUsd \$', style: const TextStyle(color: Color(0xFF34D399), fontWeight: FontWeight.bold, fontSize: 12)),
+                          ],
+                        ),
+                      ],
                     ],
                     const Divider(color: Colors.white12, height: 18),
                     Row(
@@ -654,6 +689,10 @@ class _AdminDepositsPageState extends State<AdminDepositsPage> {
     final feePercent = dep['feePercent'] ?? 0;
     final sourceCurrency = dep['sourceCurrency'] ?? 'USD';
     final creditCurrency = dep['creditCurrency'] ?? 'USD';
+    final isCustom = dep['currencyType'] == 'OTHER' || dep['ratePerUsd'] != null;
+    final currencyUnit = dep['currencyUnit'] ?? sourceCurrency;
+    final ratePerUsd = dep['ratePerUsd'];
+    final amountInUsd = dep['amountInUsd'];
     final operationNumber = dep['operationNumber'] ?? '';
     final note = dep['note'] ?? '';
     final status = dep['status'] ?? 'pending';
@@ -820,11 +859,36 @@ class _AdminDepositsPageState extends State<AdminDepositsPage> {
                             ],
                           ),
                           Text(
-                            '$amount $sourceCurrency',
+                            '$amount $currencyUnit',
                             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5),
                           ),
                         ],
                       ),
+                      if (isCustom && ratePerUsd != null) ...[
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF8B5CF6).withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.3)),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                '🌍 سعر التحويل: 1\$ = $ratePerUsd $currencyUnit',
+                                style: const TextStyle(color: Color(0xFFC4B5FD), fontSize: 11, fontWeight: FontWeight.bold),
+                              ),
+                              if (amountInUsd != null)
+                                Text(
+                                  'المعادل: $amountInUsd \$',
+                                  style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.bold),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 6),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,

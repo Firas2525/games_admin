@@ -331,7 +331,7 @@ class _AdminAllOrdersPageState extends State<AdminAllOrdersPage> {
   }
 
   // --- Check Individual Order Status ---
-  Future<void> _checkSingleOrderStatus(Map<String, dynamic> order) async {
+  Future<void> _checkSingleOrderStatus(Map<dynamic, dynamic> order) async {
     final orderId = (order['orderId'] ?? order['_id'] ?? order['id']).toString();
     setState(() => _checkingOrderIds.add(orderId));
 

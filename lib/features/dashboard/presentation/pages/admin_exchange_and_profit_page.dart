@@ -484,18 +484,17 @@ class _AdminExchangeAndProfitPageState extends State<AdminExchangeAndProfitPage>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.call_received_rounded, color: Color(0xFF10B981), size: 18),
-                        SizedBox(width: 6),
-                        Text(
-                          '1. سعر الشراء (عندما يحصل الزبون على ليرة):',
-                          style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-                        ),
-                      ],
+                    const Icon(Icons.call_received_rounded, color: Color(0xFF10B981), size: 18),
+                    const SizedBox(width: 6),
+                    const Expanded(
+                      child: Text(
+                        '1. سعر الشراء (استلام ليرة):',
+                        style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
+                    const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
@@ -559,18 +558,17 @@ class _AdminExchangeAndProfitPageState extends State<AdminExchangeAndProfitPage>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.call_made_rounded, color: Color(0xFF38BDF8), size: 18),
-                        SizedBox(width: 6),
-                        Text(
-                          '2. سعر المبيع (عندما يشتري الزبون بالليرة):',
-                          style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-                        ),
-                      ],
+                    const Icon(Icons.call_made_rounded, color: Color(0xFF38BDF8), size: 18),
+                    const SizedBox(width: 6),
+                    const Expanded(
+                      child: Text(
+                        '2. سعر المبيع (الدفع بالليرة):',
+                        style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
+                    const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
@@ -623,24 +621,22 @@ class _AdminExchangeAndProfitPageState extends State<AdminExchangeAndProfitPage>
           const SizedBox(height: 12),
 
           // Quick Sync Button
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton.icon(
-                style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFF94A3B8),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                ),
-                onPressed: () {
-                  final val = _sellRateController.text.trim();
-                  _buyRateController.text = val;
-                  _rateController.text = val;
-                  setState(() {});
-                },
-                icon: const Icon(Icons.sync_rounded, size: 16),
-                label: const Text('جعل سعر الشراء مطابقاً لسعر المبيع (سعر موحد)', style: TextStyle(fontSize: 11)),
+          Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: TextButton.icon(
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF94A3B8),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               ),
-            ],
+              onPressed: () {
+                final val = _sellRateController.text.trim();
+                _buyRateController.text = val;
+                _rateController.text = val;
+                setState(() {});
+              },
+              icon: const Icon(Icons.sync_rounded, size: 16),
+              label: const Text('مزامنة سعر الشراء مع المبيع (سعر موحد)', style: TextStyle(fontSize: 11)),
+            ),
           ),
 
           const SizedBox(height: 10),
@@ -1141,12 +1137,15 @@ class _AdminExchangeAndProfitPageState extends State<AdminExchangeAndProfitPage>
 
           // 1. Cashback Percentage Input + Steppers
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'نسبة الكاش باك الممنوحة من المشتريات:',
-                style: TextStyle(color: Color(0xFFE2E8F0), fontSize: 12.5, fontWeight: FontWeight.bold),
+              const Expanded(
+                child: Text(
+                  'نسبة الكاش باك من المشتريات:',
+                  style: TextStyle(color: Color(0xFFE2E8F0), fontSize: 12.5, fontWeight: FontWeight.bold),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
+              const SizedBox(width: 8),
               Text(
                 'الحالية: ${_cashbackPercentage.toStringAsFixed(1)}%',
                 style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.bold),
@@ -1250,12 +1249,15 @@ class _AdminExchangeAndProfitPageState extends State<AdminExchangeAndProfitPage>
 
           // 2. Coins Per Dollar Input + Steppers
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'سعر استبدال الكوينز (كل X كوينز = 1 دولار):',
-                style: TextStyle(color: Color(0xFFE2E8F0), fontSize: 12.5, fontWeight: FontWeight.bold),
+              const Expanded(
+                child: Text(
+                  'سعر استبدال الكوينز (1\$):',
+                  style: TextStyle(color: Color(0xFFE2E8F0), fontSize: 12.5, fontWeight: FontWeight.bold),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
+              const SizedBox(width: 8),
               Text(
                 'الحالي: $_coinsPerDollar كوينز = 1\$',
                 style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.bold),

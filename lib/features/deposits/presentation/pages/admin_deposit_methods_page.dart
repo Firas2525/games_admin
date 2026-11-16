@@ -525,6 +525,7 @@ class _AdminDepositMethodsPageState extends State<AdminDepositMethodsPage> {
     final minDeposit = m['minDeposit'] ?? 1;
     final maxDeposit = m['maxDeposit'] ?? 100000;
     final instructions = m['instructions'] ?? '';
+    final iconKey = m['iconKey'];
     final isCustom = m['currencyType'] == 'OTHER' || m['isCustomCurrency'] == true;
     final currencyUnit = (m['currencyUnit'] ?? '').toString();
     final ratePerUsd = m['ratePerUsd'];

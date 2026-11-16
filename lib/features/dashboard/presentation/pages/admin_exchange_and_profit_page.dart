@@ -68,21 +68,29 @@ class _AdminExchangeAndProfitPageState extends State<AdminExchangeAndProfitPage>
     final cachedCb = sp.getDouble('saved_cashback_percentage');
     final cachedCpd = sp.getInt('saved_coins_per_dollar');
     final cachedCbActive = sp.getBool('saved_is_cashback_active');
+    final cachedBuy = sp.getDouble('saved_exchange_rate_buy');
+    final cachedSell = sp.getDouble('saved_exchange_rate_sell');
     if (cachedCb != null) _cashbackPercentage = cachedCb;
     if (cachedCpd != null) _coinsPerDollar = cachedCpd;
     if (cachedCbActive != null) _isCashbackActive = cachedCbActive;
+    if (cachedBuy != null) _exchangeRateBuy = cachedBuy;
+    if (cachedSell != null) _exchangeRateSell = cachedSell;
 
     try {
       final res = await sl<ApiClient>().get('/settings');
       if (res.data != null && res.data['data'] != null && mounted) {
         final data = res.data['data'] as Map<String, dynamic>;
         final rate = (data['exchangeRateUsdToSyp'] as num?)?.toDouble() ?? 15000.0;
-        final buy = (data['exchangeRateUsdToSypBuy'] as num?)?.toDouble() ?? rate;
-        final sell = (data['exchangeRateUsdToSypSell'] as num?)?.toDouble() ?? rate;
+        final buy = (data['exchangeRateUsdToSypBuy'] as num?)?.toDouble() ?? cachedBuy ?? rate;
+        final sell = (data['exchangeRateUsdToSypSell'] as num?)?.toDouble() ?? cachedSell ?? rate;
         final profit = (data['profitPercentage'] as num?)?.toDouble() ?? 0.0;
         final cbFromApi = (data['cashbackPercentage'] as num?)?.toDouble();
         final cpdFromApi = (data['coinsPerDollar'] as num?)?.toInt();
         final cbActiveFromApi = data['isCashbackActive'] != null ? (data['isCashbackActive'] == true) : null;
+
+        // Persist to local cache as well
+        await sp.setDouble('saved_exchange_rate_buy', buy);
+        await sp.setDouble('saved_exchange_rate_sell', sell);
 
         // Load from API or fallback to local cache / default 100%
         final cbPct = cbFromApi ?? cachedCb ?? 100.0;
@@ -132,6 +140,9 @@ class _AdminExchangeAndProfitPageState extends State<AdminExchangeAndProfitPage>
         'exchangeRateUsdToSypBuy': buy,
         'exchangeRateUsdToSypSell': sell,
       });
+      final sp = sl<ApiClient>().sharedPreferences;
+      await sp.setDouble('saved_exchange_rate_buy', buy);
+      await sp.setDouble('saved_exchange_rate_sell', sell);
       if (mounted) {
         setState(() {
           _exchangeRateBuy = buy;

@@ -66,14 +66,17 @@ class _AdminOverviewPageState extends State<AdminOverviewPage> {
 
   Future<void> _fetchSettings() async {
     try {
+      final sp = sl<ApiClient>().sharedPreferences;
+      final cachedBuy = sp.getDouble('saved_exchange_rate_buy');
+      final cachedSell = sp.getDouble('saved_exchange_rate_sell');
       final res = await sl<ApiClient>().get('/settings');
       if (res.data != null && res.data['data'] != null && mounted) {
         final data = res.data['data'] as Map<String, dynamic>;
         setState(() {
           _profitPercentage = (data['profitPercentage'] as num?)?.toDouble() ?? 0.0;
           _exchangeRateUsdToSyp = (data['exchangeRateUsdToSyp'] as num?)?.toDouble() ?? 15000.0;
-          _exchangeRateBuy = (data['exchangeRateUsdToSypBuy'] as num?)?.toDouble() ?? _exchangeRateUsdToSyp;
-          _exchangeRateSell = (data['exchangeRateUsdToSypSell'] as num?)?.toDouble() ?? _exchangeRateUsdToSyp;
+          _exchangeRateBuy = (data['exchangeRateUsdToSypBuy'] as num?)?.toDouble() ?? cachedBuy ?? _exchangeRateUsdToSyp;
+          _exchangeRateSell = (data['exchangeRateUsdToSypSell'] as num?)?.toDouble() ?? cachedSell ?? _exchangeRateUsdToSyp;
         });
       }
     } catch (_) {}

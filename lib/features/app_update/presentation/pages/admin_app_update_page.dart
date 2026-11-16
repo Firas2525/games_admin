@@ -151,185 +151,192 @@ class _AdminAppUpdatePageState extends State<AdminAppUpdatePage> {
       barrierDismissible: !_isForceUpdate,
       builder: (ctx) => PopScope(
         canPop: !_isForceUpdate,
-        child: Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-          child: Container(
-            padding: const EdgeInsets.all(22),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
+        child: Directionality(
+          textDirection: TextDirection.rtl,
+          child: Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            child: Container(
+              padding: const EdgeInsets.all(22),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: _isForceUpdate ? const Color(0xFFEF4444) : const Color(0xFF0284C7),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: (_isForceUpdate ? const Color(0xFFEF4444) : const Color(0xFF0284C7))
+                        .withValues(alpha: 0.25),
+                    blurRadius: 28,
+                    spreadRadius: 4,
+                  ),
+                ],
               ),
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(
-                color: _isForceUpdate ? const Color(0xFFEF4444) : const Color(0xFF0284C7),
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: (_isForceUpdate ? const Color(0xFFEF4444) : const Color(0xFF0284C7))
-                      .withValues(alpha: 0.25),
-                  blurRadius: 28,
-                  spreadRadius: 4,
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Top Badge Icon
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: _isForceUpdate
-                          ? [const Color(0xFFEF4444), const Color(0xFFDC2626)]
-                          : [const Color(0xFF0284C7), const Color(0xFF0EA5E9)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: (_isForceUpdate
-                                ? const Color(0xFFEF4444)
-                                : const Color(0xFF0284C7))
-                            .withValues(alpha: 0.4),
-                        blurRadius: 16,
-                      ),
-                    ],
-                  ),
-                  child: const Icon(Icons.rocket_launch_rounded, color: Colors.white, size: 32),
-                ),
-                const SizedBox(height: 16),
-
-                // Title
-                Text(
-                  _titleController.text.trim().isNotEmpty
-                      ? _titleController.text.trim()
-                      : 'تحديث جديد متوفر 🚀',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 17,
-                  ),
-                ),
-                const SizedBox(height: 8),
-
-                // Version Chip
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white12),
-                  ),
-                  child: Text(
-                    'الإصدار الجديد: v${_versionController.text.trim()} (${_buildNumberController.text.trim()})',
-                    style: const TextStyle(
-                      color: Color(0xFF38BDF8),
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'monospace',
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 14),
-
-                // Type of Update Chip (إجباري / اختياري)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _isForceUpdate
-                        ? const Color(0xFFEF4444).withValues(alpha: 0.15)
-                        : const Color(0xFF10B981).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: _isForceUpdate
-                          ? const Color(0xFFEF4444).withValues(alpha: 0.4)
-                          : const Color(0xFF10B981).withValues(alpha: 0.4),
-                    ),
-                  ),
-                  child: Text(
-                    _isForceUpdate
-                        ? '⚠️ تحديث إجباري: لا يمكن استخدام التطبيق دون تحديث'
-                        : '💡 تحديث اختياري: يمكنك التحديث لاحقاً',
-                    style: TextStyle(
-                      color: _isForceUpdate ? const Color(0xFFFDA4AF) : const Color(0xFF6EE7B7),
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 14),
-
-                // Notes
-                if (_notesController.text.trim().isNotEmpty) ...[
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Top Badge Icon
                   Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
+                    width: 64,
+                    height: 64,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0F172A),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white10),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'ما الجديد في هذا الإصدار:',
-                          style: TextStyle(
-                            color: Color(0xFF94A3B8),
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          _notesController.text.trim(),
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
-                            height: 1.4,
-                          ),
+                      gradient: LinearGradient(
+                        colors: _isForceUpdate
+                            ? [const Color(0xFFEF4444), const Color(0xFFDC2626)]
+                            : [const Color(0xFF0284C7), const Color(0xFF0EA5E9)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: (_isForceUpdate
+                                  ? const Color(0xFFEF4444)
+                                  : const Color(0xFF0284C7))
+                              .withValues(alpha: 0.4),
+                          blurRadius: 16,
                         ),
                       ],
                     ),
+                    child: const Icon(Icons.rocket_launch_rounded, color: Colors.white, size: 32),
                   ),
-                  const SizedBox(height: 18),
-                ],
+                  const SizedBox(height: 16),
 
-                // Action Buttons
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0284C7),
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(double.infinity, 44),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  icon: const Icon(Icons.download_rounded, size: 20),
-                  label: const Text(
-                    'تحديث الآن (الانتقال للتحميل)',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
-                  ),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-
-                if (!_isForceUpdate) ...[
-                  const SizedBox(height: 8),
-                  TextButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    child: const Text(
-                      'التخطي والمتابعة لاحقاً',
-                      style: TextStyle(color: Colors.white54, fontSize: 12),
+                  // Title
+                  Text(
+                    _titleController.text.trim().isNotEmpty
+                        ? _titleController.text.trim()
+                        : 'تحديث جديد متوفر 🚀',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 17,
                     ),
                   ),
+                  const SizedBox(height: 8),
+
+                  // Version Chip
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white12),
+                    ),
+                    child: Directionality(
+                      textDirection: TextDirection.ltr,
+                      child: Text(
+                        'الإصدار الجديد: v${_versionController.text.trim()} (${_buildNumberController.text.trim()})',
+                        style: const TextStyle(
+                          color: Color(0xFF38BDF8),
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Type of Update Chip (إجباري / اختياري)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _isForceUpdate
+                          ? const Color(0xFFEF4444).withValues(alpha: 0.15)
+                          : const Color(0xFF10B981).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: _isForceUpdate
+                            ? const Color(0xFFEF4444).withValues(alpha: 0.4)
+                            : const Color(0xFF10B981).withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: Text(
+                      _isForceUpdate
+                          ? '⚠️ تحديث إجباري: لا يمكن استخدام التطبيق دون تحديث'
+                          : '💡 تحديث اختياري: يمكنك التحديث لاحقاً',
+                      style: TextStyle(
+                        color: _isForceUpdate ? const Color(0xFFFDA4AF) : const Color(0xFF6EE7B7),
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Notes
+                  if (_notesController.text.trim().isNotEmpty) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F172A),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white10),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'ما الجديد في هذا الإصدار:',
+                            style: TextStyle(
+                              color: Color(0xFF94A3B8),
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            _notesController.text.trim(),
+                            textAlign: TextAlign.start,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                  ],
+
+                  // Action Buttons
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0284C7),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 44),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    icon: const Icon(Icons.download_rounded, size: 20),
+                    label: const Text(
+                      'تحديث الآن (الانتقال للتحميل)',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                    ),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+
+                  if (!_isForceUpdate) ...[
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text(
+                        'التخطي والمتابعة لاحقاً',
+                        style: TextStyle(color: Colors.white54, fontSize: 12),
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),

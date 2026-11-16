@@ -47,6 +47,8 @@ class _AdminOverviewPageState extends State<AdminOverviewPage> {
   bool _isLoadingStats = false;
   double _profitPercentage = 0.0;
   double _exchangeRateUsdToSyp = 15000.0;
+  double _exchangeRateBuy = 15000.0;
+  double _exchangeRateSell = 15000.0;
 
   @override
   void initState() {
@@ -70,6 +72,8 @@ class _AdminOverviewPageState extends State<AdminOverviewPage> {
         setState(() {
           _profitPercentage = (data['profitPercentage'] as num?)?.toDouble() ?? 0.0;
           _exchangeRateUsdToSyp = (data['exchangeRateUsdToSyp'] as num?)?.toDouble() ?? 15000.0;
+          _exchangeRateBuy = (data['exchangeRateUsdToSypBuy'] as num?)?.toDouble() ?? _exchangeRateUsdToSyp;
+          _exchangeRateSell = (data['exchangeRateUsdToSypSell'] as num?)?.toDouble() ?? _exchangeRateUsdToSyp;
         });
       }
     } catch (_) {}
@@ -266,7 +270,9 @@ class _AdminOverviewPageState extends State<AdminOverviewPage> {
                       const Icon(Icons.currency_exchange_rounded, size: 14, color: Color(0xFF34D399)),
                       const SizedBox(width: 6),
                       Text(
-                        'سعر الصرف: 1\$ = ${_exchangeRateUsdToSyp.toStringAsFixed(0)} ل.س',
+                        _exchangeRateBuy == _exchangeRateSell
+                            ? 'سعر الصرف: 1\$ = ${_exchangeRateSell.toStringAsFixed(0)} ل.س'
+                            : 'صرف: شراء ${_exchangeRateBuy.toStringAsFixed(0)} | مبيع ${_exchangeRateSell.toStringAsFixed(0)} ل.س',
                         style: const TextStyle(
                           color: Color(0xFF34D399),
                           fontSize: 11,

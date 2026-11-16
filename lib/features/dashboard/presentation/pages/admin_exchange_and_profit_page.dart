@@ -16,6 +16,8 @@ class _AdminExchangeAndProfitPageState extends State<AdminExchangeAndProfitPage>
   bool _isSavingCashback = false;
 
   double _exchangeRateUsdToSyp = 15000.0;
+  double _exchangeRateBuy = 15000.0;
+  double _exchangeRateSell = 15000.0;
   double _profitPercentage = 0.0;
   double _cashbackPercentage = 5.0;
   int _coinsPerDollar = 100;
@@ -23,6 +25,8 @@ class _AdminExchangeAndProfitPageState extends State<AdminExchangeAndProfitPage>
   String _simSpendCurrency = 'USD';
 
   late TextEditingController _rateController;
+  late TextEditingController _buyRateController;
+  late TextEditingController _sellRateController;
   late TextEditingController _profitController;
   late TextEditingController _cashbackPercentController;
   late TextEditingController _coinsPerDollarController;
@@ -34,6 +38,8 @@ class _AdminExchangeAndProfitPageState extends State<AdminExchangeAndProfitPage>
   void initState() {
     super.initState();
     _rateController = TextEditingController(text: '15000');
+    _buyRateController = TextEditingController(text: '15000');
+    _sellRateController = TextEditingController(text: '15000');
     _profitController = TextEditingController(text: '0.0');
     _cashbackPercentController = TextEditingController(text: '100.0');
     _coinsPerDollarController = TextEditingController(text: '100');
@@ -43,6 +49,8 @@ class _AdminExchangeAndProfitPageState extends State<AdminExchangeAndProfitPage>
   @override
   void dispose() {
     _rateController.dispose();
+    _buyRateController.dispose();
+    _sellRateController.dispose();
     _profitController.dispose();
     _cashbackPercentController.dispose();
     _coinsPerDollarController.dispose();
@@ -69,6 +77,8 @@ class _AdminExchangeAndProfitPageState extends State<AdminExchangeAndProfitPage>
       if (res.data != null && res.data['data'] != null && mounted) {
         final data = res.data['data'] as Map<String, dynamic>;
         final rate = (data['exchangeRateUsdToSyp'] as num?)?.toDouble() ?? 15000.0;
+        final buy = (data['exchangeRateUsdToSypBuy'] as num?)?.toDouble() ?? rate;
+        final sell = (data['exchangeRateUsdToSypSell'] as num?)?.toDouble() ?? rate;
         final profit = (data['profitPercentage'] as num?)?.toDouble() ?? 0.0;
         final cbFromApi = (data['cashbackPercentage'] as num?)?.toDouble();
         final cpdFromApi = (data['coinsPerDollar'] as num?)?.toInt();
@@ -81,12 +91,16 @@ class _AdminExchangeAndProfitPageState extends State<AdminExchangeAndProfitPage>
 
         setState(() {
           _exchangeRateUsdToSyp = rate;
+          _exchangeRateBuy = buy;
+          _exchangeRateSell = sell;
           _profitPercentage = profit;
           _cashbackPercentage = cbPct;
           _coinsPerDollar = cpd;
           _isCashbackActive = cbActive;
 
           _rateController.text = rate.toStringAsFixed(0);
+          _buyRateController.text = buy.toStringAsFixed(0);
+          _sellRateController.text = sell.toStringAsFixed(0);
           _profitController.text = profit.toStringAsFixed(1);
           _cashbackPercentController.text = cbPct.toStringAsFixed(1);
           _coinsPerDollarController.text = cpd.toString();
@@ -99,11 +113,12 @@ class _AdminExchangeAndProfitPageState extends State<AdminExchangeAndProfitPage>
   }
 
   Future<void> _saveExchangeRate() async {
-    final val = double.tryParse(_rateController.text.trim());
-    if (val == null || val <= 0) {
+    final buy = double.tryParse(_buyRateController.text.trim()) ?? 0.0;
+    final sell = double.tryParse(_sellRateController.text.trim()) ?? 0.0;
+    if (buy <= 0 || sell <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('يرجى إدخال سعر صرف صالح أكبر من الصفر'),
+          content: Text('يرجى إدخال سعر شراء وسعر مبيع صحيحين أكبر من الصفر'),
           backgroundColor: Color(0xFFEF4444),
         ),
       );
@@ -112,15 +127,26 @@ class _AdminExchangeAndProfitPageState extends State<AdminExchangeAndProfitPage>
 
     setState(() => _isSavingRate = true);
     try {
-      await sl<ApiClient>().patch('/settings', data: {'exchangeRateUsdToSyp': val});
+      await sl<ApiClient>().patch('/settings', data: {
+        'exchangeRateUsdToSyp': sell,
+        'exchangeRateUsdToSypBuy': buy,
+        'exchangeRateUsdToSypSell': sell,
+      });
       if (mounted) {
         setState(() {
-          _exchangeRateUsdToSyp = val;
+          _exchangeRateBuy = buy;
+          _exchangeRateSell = sell;
+          _exchangeRateUsdToSyp = sell;
+          _rateController.text = sell.toStringAsFixed(0);
           _isSavingRate = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('تم حفظ وتحديث سعر الصرف بنجاح (1\$ = ${val.toStringAsFixed(0)} ل.س) ✅'),
+            content: Text(
+              buy == sell
+                  ? 'تم حفظ سعر الصرف الموحد بنجاح (1\$ = ${sell.toStringAsFixed(0)} ل.س) ✅'
+                  : 'تم حفظ سعري الصرف بنجاح (شراء: ${buy.toStringAsFixed(0)} | مبيع: ${sell.toStringAsFixed(0)} ل.س) ✅',
+            ),
             backgroundColor: const Color(0xFF10B981),
             behavior: SnackBarBehavior.floating,
           ),
@@ -366,9 +392,11 @@ class _AdminExchangeAndProfitPageState extends State<AdminExchangeAndProfitPage>
   }
 
   Widget _buildExchangeRateSection() {
-    final double inputRate = double.tryParse(_rateController.text.trim()) ?? _exchangeRateUsdToSyp;
+    final double inputBuy = double.tryParse(_buyRateController.text.trim()) ?? _exchangeRateBuy;
+    final double inputSell = double.tryParse(_sellRateController.text.trim()) ?? _exchangeRateSell;
     final double simSyp = double.tryParse(_simSypController.text.trim()) ?? 150000.0;
-    final double simResultUsd = inputRate > 0 ? (simSyp / inputRate) : 0.0;
+    final double simUsdFromBuy = inputBuy > 0 ? (simSyp / inputBuy) : 0.0;
+    final double simUsdFromSell = inputSell > 0 ? (simSyp / inputSell) : 0.0;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -397,31 +425,45 @@ class _AdminExchangeAndProfitPageState extends State<AdminExchangeAndProfitPage>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'سعر صرف الدولار (USD / SYP)',
+                      'أسعار صرف الدولار (شراء ومبيع)',
                       style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
                     ),
                     Text(
-                      'المعتمد لتحويل إيداعات الليرة السورية إلى رصيد دولار',
+                      'سعر الشراء عندما يستلم الزبون ليرة، وسعر المبيع عندما يشتري منتجات بالليرة',
                       style: TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
                     ),
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.35)),
-                ),
-                child: Text(
-                  '1\$ = ${_exchangeRateUsdToSyp.toStringAsFixed(0)} ل.س',
-                  style: const TextStyle(
-                    color: Color(0xFF34D399),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
+              Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.35)),
+                    ),
+                    child: Text(
+                      'شراء: ${_exchangeRateBuy.toStringAsFixed(0)}',
+                      style: const TextStyle(color: Color(0xFF34D399), fontWeight: FontWeight.bold, fontSize: 11),
+                    ),
                   ),
-                ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0284C7).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFF0284C7).withValues(alpha: 0.35)),
+                    ),
+                    child: Text(
+                      'مبيع: ${_exchangeRateSell.toStringAsFixed(0)}',
+                      style: const TextStyle(color: Color(0xFF38BDF8), fontWeight: FontWeight.bold, fontSize: 11),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -430,79 +472,178 @@ class _AdminExchangeAndProfitPageState extends State<AdminExchangeAndProfitPage>
           const Divider(color: Color(0xFF1E293B), height: 1),
           const SizedBox(height: 16),
 
-          // Input Field
-          const Text(
-            'سعر صرف 1 دولار بالليرة السورية:',
-            style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 12, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _rateController,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-            decoration: InputDecoration(
-              hintText: '15000',
-              hintStyle: const TextStyle(color: Colors.white30),
-              suffixText: 'ل.س',
-              suffixStyle: const TextStyle(color: Color(0xFF34D399), fontSize: 15, fontWeight: FontWeight.bold),
-              filled: true,
-              fillColor: const Color(0xFF0B1322),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF1E293B))),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF1E293B))),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF10B981), width: 1.5),
-              ),
+          // 1. Buy Rate Card (سعر الشراء - المنخفض)
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0B1322),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.35)),
             ),
-            onChanged: (_) => setState(() {}),
-          ),
-
-          const SizedBox(height: 10),
-
-          // Quick Delta Buttons
-          const Text('تعديل سريع للسعر:', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
-          const SizedBox(height: 6),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: [
-              _buildDeltaChip('-1000', -1000, _rateController),
-              _buildDeltaChip('-500', -500, _rateController),
-              _buildDeltaChip('-100', -100, _rateController),
-              _buildDeltaChip('+100', 100, _rateController),
-              _buildDeltaChip('+500', 500, _rateController),
-              _buildDeltaChip('+1000', 1000, _rateController),
-            ],
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.call_received_rounded, color: Color(0xFF10B981), size: 18),
+                        SizedBox(width: 6),
+                        Text(
+                          '1. سعر الشراء (عندما يحصل الزبون على ليرة):',
+                          style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text('المنخفض 📉', style: TextStyle(color: Color(0xFF34D399), fontSize: 10, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'يُطبق عند: شحن محفظة ليرة عبر دولار أو عملات أخرى • سحب الأرباح والرواتب لليرة • استبدال الكوينز إلى ليرة.',
+                  style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, height: 1.4),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: _buyRateController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  style: const TextStyle(color: Color(0xFF34D399), fontSize: 18, fontWeight: FontWeight.bold),
+                  decoration: InputDecoration(
+                    hintText: '15000',
+                    hintStyle: const TextStyle(color: Colors.white30),
+                    suffixText: 'ل.س / 1\$',
+                    suffixStyle: const TextStyle(color: Color(0xFF34D399), fontSize: 13, fontWeight: FontWeight.bold),
+                    filled: true,
+                    fillColor: const Color(0xFF111827),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF1E293B))),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF1E293B))),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF10B981), width: 1.5)),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    _buildDeltaChip('-500', -500, _buyRateController),
+                    _buildDeltaChip('-100', -100, _buyRateController),
+                    _buildDeltaChip('+100', 100, _buyRateController),
+                    _buildDeltaChip('+500', 500, _buyRateController),
+                  ],
+                ),
+              ],
+            ),
           ),
 
           const SizedBox(height: 14),
 
-          // Preset Target Rates
-          const Text('أسعار شائعة جاهزة:', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
-          const SizedBox(height: 6),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: [14000.0, 14500.0, 15000.0, 15500.0, 16000.0].map((rate) {
-              final isCurrent = (inputRate - rate).abs() < 1;
-              return ActionChip(
-                label: Text('${rate.toStringAsFixed(0)} ل.س', style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-                  color: isCurrent ? Colors.white : const Color(0xFF94A3B8),
-                )),
-                backgroundColor: isCurrent ? const Color(0xFF059669) : const Color(0xFF1E293B),
-                side: BorderSide(color: isCurrent ? const Color(0xFF10B981) : const Color(0xFF334155)),
-                onPressed: () {
-                  _rateController.text = rate.toStringAsFixed(0);
-                  setState(() {});
-                },
-              );
-            }).toList(),
+          // 2. Sell Rate Card (سعر المبيع - المرتفع)
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0B1322),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFF0284C7).withValues(alpha: 0.35)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.call_made_rounded, color: Color(0xFF38BDF8), size: 18),
+                        SizedBox(width: 6),
+                        Text(
+                          '2. سعر المبيع (عندما يشتري الزبون بالليرة):',
+                          style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0284C7).withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text('المرتفع 📈', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 10, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'يُطبق عند: احتساب أسعار المنتجات والطلبات بالليرة • إيداع الليرة لشحن محفظة دولار • شراء الدولار.',
+                  style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, height: 1.4),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: _sellRateController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 18, fontWeight: FontWeight.bold),
+                  decoration: InputDecoration(
+                    hintText: '15000',
+                    hintStyle: const TextStyle(color: Colors.white30),
+                    suffixText: 'ل.س / 1\$',
+                    suffixStyle: const TextStyle(color: Color(0xFF38BDF8), fontSize: 13, fontWeight: FontWeight.bold),
+                    filled: true,
+                    fillColor: const Color(0xFF111827),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF1E293B))),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF1E293B))),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5)),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    _buildDeltaChip('-500', -500, _sellRateController),
+                    _buildDeltaChip('-100', -100, _sellRateController),
+                    _buildDeltaChip('+100', 100, _sellRateController),
+                    _buildDeltaChip('+500', 500, _sellRateController),
+                  ],
+                ),
+              ],
+            ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+
+          // Quick Sync Button
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton.icon(
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF94A3B8),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                ),
+                onPressed: () {
+                  final val = _sellRateController.text.trim();
+                  _buyRateController.text = val;
+                  _rateController.text = val;
+                  setState(() {});
+                },
+                icon: const Icon(Icons.sync_rounded, size: 16),
+                label: const Text('جعل سعر الشراء مطابقاً لسعر المبيع (سعر موحد)', style: TextStyle(fontSize: 11)),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 10),
 
           // Live Calculator Simulator Box
           Container(
@@ -520,7 +661,7 @@ class _AdminExchangeAndProfitPageState extends State<AdminExchangeAndProfitPage>
                     Icon(Icons.calculate_rounded, color: Color(0xFF10B981), size: 16),
                     SizedBox(width: 6),
                     Text(
-                      'حاسبة معاينة التحويل المباشر:',
+                      'حاسبة معاينة الفروقات للزبائن:',
                       style: TextStyle(color: Color(0xFF34D399), fontSize: 11.5, fontWeight: FontWeight.bold),
                     ),
                   ],
@@ -529,46 +670,72 @@ class _AdminExchangeAndProfitPageState extends State<AdminExchangeAndProfitPage>
                 Row(
                   children: [
                     Expanded(
-                      flex: 5,
-                      child: TextField(
-                        controller: _simSypController,
-                        keyboardType: TextInputType.number,
-                        style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-                        decoration: InputDecoration(
-                          labelText: 'المبلغ المدفوع بالليرة',
-                          labelStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10),
-                          suffixText: 'ل.س',
-                          suffixStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
-                          isDense: true,
-                          filled: true,
-                          fillColor: const Color(0xFF111827),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF1E293B))),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                        ),
-                        onChanged: (_) => setState(() {}),
-                      ),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8.0),
-                      child: Icon(Icons.arrow_back_rounded, color: Color(0xFF34D399), size: 16),
-                    ),
-                    Expanded(
                       flex: 4,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                          color: const Color(0xFF10B981).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                          border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.25)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('رصيد الدولار:', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 9.5)),
+                            const Text('إيداع 100\$ لمحفظة ليرة:', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 9.5)),
+                            const SizedBox(height: 2),
                             Text(
-                              '\$${simResultUsd.toStringAsFixed(2)}',
-                              style: const TextStyle(color: Color(0xFF34D399), fontSize: 14, fontWeight: FontWeight.w900),
+                              '${(100 * inputBuy).round()} ل.س',
+                              style: const TextStyle(color: Color(0xFF34D399), fontSize: 13, fontWeight: FontWeight.bold),
                             ),
+                            const Text('(بسعر الشراء)', style: TextStyle(color: Colors.white38, fontSize: 9)),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 4,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFF0284C7).withValues(alpha: 0.25)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('شراء منتج بقيمة 100\$:', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 9.5)),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${(100 * inputSell).round()} ل.س',
+                              style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 13, fontWeight: FontWeight.bold),
+                            ),
+                            const Text('(بسعر المبيع)', style: TextStyle(color: Colors.white38, fontSize: 9)),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 3,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.25)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('فارق الـ 100\$:', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 9.5)),
+                            const SizedBox(height: 2),
+                            Text(
+                              '+${((100 * inputSell) - (100 * inputBuy)).round()} ل.س',
+                              style: const TextStyle(color: Color(0xFFC4B5FD), fontSize: 13, fontWeight: FontWeight.bold),
+                            ),
+                            const Text('(هامش الربح)', style: TextStyle(color: Colors.white38, fontSize: 9)),
                           ],
                         ),
                       ),
@@ -584,7 +751,7 @@ class _AdminExchangeAndProfitPageState extends State<AdminExchangeAndProfitPage>
           // Save Button
           SizedBox(
             width: double.infinity,
-            height: 44,
+            height: 46,
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF10B981),
@@ -597,8 +764,8 @@ class _AdminExchangeAndProfitPageState extends State<AdminExchangeAndProfitPage>
                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.check_circle_rounded, size: 18),
               label: Text(
-                _isSavingRate ? 'جارٍ الحفظ...' : 'حفظ وتطبيق سعر الصرف',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                _isSavingRate ? 'جارٍ الحفظ والتطبيق...' : 'حفظ وتطبيق سعري الصرف الآن',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
               ),
             ),
           ),

@@ -56,6 +56,9 @@ class ProductModel extends ProductEntity {
     super.customImage,
     super.isNameOverridden = false,
     super.isImageOverridden = false,
+    super.isExchange = false,
+    super.exchangeUnitName = '',
+    super.unitsPerDollar = 1.0,
     required super.requiredFields,
   });
 
@@ -116,6 +119,9 @@ class ProductModel extends ProductEntity {
       customImage: json['customImage'] as String?,
       isNameOverridden: json['isNameOverridden'] as bool? ?? false,
       isImageOverridden: json['isImageOverridden'] as bool? ?? false,
+      isExchange: json['isExchange'] as bool? ?? false,
+      exchangeUnitName: json['exchangeUnitName'] as String? ?? '',
+      unitsPerDollar: (json['unitsPerDollar'] as num?)?.toDouble() ?? 1.0,
       requiredFields: fields,
     );
   }
@@ -146,6 +152,9 @@ class ProductModel extends ProductEntity {
       'customImage': customImage,
       'isNameOverridden': isNameOverridden,
       'isImageOverridden': isImageOverridden,
+      'isExchange': isExchange,
+      'exchangeUnitName': exchangeUnitName,
+      'unitsPerDollar': unitsPerDollar,
       'requiredFields': requiredFields.map((f) {
         if (f is RequiredFieldModel) return f.toJson();
         return {

@@ -891,83 +891,152 @@ class _AdminAddCustomProductPageState extends State<AdminAddCustomProductPage> {
 
   Widget _buildExchangeProductCard() {
     return Container(
-      margin: const EdgeInsets.only(top: 10),
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(top: 8, bottom: 4),
       decoration: BoxDecoration(
         color: _isExchange
-            ? const Color(0xFF0284C7).withValues(alpha: 0.12)
+            ? const Color(0xFF0284C7).withValues(alpha: 0.14)
             : const Color(0xFF131F35),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: _isExchange
               ? const Color(0xFF38BDF8)
-              : Colors.white.withValues(alpha: 0.08),
-          width: _isExchange ? 1.5 : 1.0,
+              : Colors.amber.withValues(alpha: 0.35),
+          width: _isExchange ? 1.8 : 1.2,
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: _isExchange
-                      ? const Color(0xFF0284C7)
-                      : Colors.white.withValues(alpha: 0.06),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  Icons.currency_exchange_rounded,
-                  color: _isExchange ? Colors.white : Colors.white54,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'منتج تصريف (تحويل كميات / رصيد)',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                      ),
+          InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () {
+              setState(() {
+                _isExchange = !_isExchange;
+                if (_isExchange) {
+                  final upd = double.tryParse(_unitsPerDollarController.text.trim()) ?? 1000.0;
+                  if (upd > 0) {
+                    final p = (1.0 / upd).toStringAsFixed(6);
+                    _priceController.text = p;
+                    _originalPriceController.text = p;
+                  }
+                }
+              });
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Checkbox(
+                    value: _isExchange,
+                    activeColor: const Color(0xFF10B981),
+                    checkColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                    side: BorderSide(
+                      color: _isExchange ? const Color(0xFF10B981) : Colors.amber.shade400,
+                      width: 1.8,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'تحديد سعر بالوحدة (مثلاً: كل 1,000 كوينز = 1\$)',
-                      style: TextStyle(
-                        color: _isExchange ? const Color(0xFF38BDF8) : Colors.white38,
-                        fontSize: 11,
-                      ),
+                    onChanged: (val) {
+                      setState(() {
+                        _isExchange = val ?? false;
+                        if (_isExchange) {
+                          final upd = double.tryParse(_unitsPerDollarController.text.trim()) ?? 1000.0;
+                          if (upd > 0) {
+                            final p = (1.0 / upd).toStringAsFixed(6);
+                            _priceController.text = p;
+                            _originalPriceController.text = p;
+                          }
+                        }
+                      });
+                    },
+                  ),
+                  const SizedBox(width: 4),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: _isExchange
+                          ? const Color(0xFF0284C7)
+                          : Colors.amber.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                  ],
-                ),
+                    child: Icon(
+                      Icons.currency_exchange_rounded,
+                      color: _isExchange ? Colors.white : Colors.amber.shade300,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Text(
+                              'منتج صرافة (تصريف كوينز / رصيد)',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            if (_isExchange)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: const Color(0xFF10B981)),
+                                ),
+                                child: const Text(
+                                  'مفعّل ✓',
+                                  style: TextStyle(
+                                    color: Color(0xFF34D399),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          'تحديد سعر بالوحدة (مثلاً: كل 1,000 كوينز = 1\$)',
+                          style: TextStyle(
+                            color: _isExchange ? const Color(0xFF38BDF8) : Colors.white54,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Switch(
+                    value: _isExchange,
+                    activeColor: const Color(0xFF38BDF8),
+                    onChanged: (val) {
+                      setState(() {
+                        _isExchange = val;
+                        if (_isExchange) {
+                          final upd = double.tryParse(_unitsPerDollarController.text.trim()) ?? 1000.0;
+                          if (upd > 0) {
+                            final p = (1.0 / upd).toStringAsFixed(6);
+                            _priceController.text = p;
+                            _originalPriceController.text = p;
+                          }
+                        }
+                      });
+                    },
+                  ),
+                ],
               ),
-              Switch(
-                value: _isExchange,
-                activeColor: const Color(0xFF38BDF8),
-                onChanged: (val) {
-                  setState(() {
-                    _isExchange = val;
-                    if (_isExchange) {
-                      final upd = double.tryParse(_unitsPerDollarController.text.trim()) ?? 1000.0;
-                      if (upd > 0) {
-                        final p = (1.0 / upd).toStringAsFixed(6);
-                        _priceController.text = p;
-                        _originalPriceController.text = p;
-                      }
-                    }
-                  });
-                },
-              ),
-            ],
+            ),
           ),
           if (_isExchange) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
             const SizedBox(height: 14),
             const Divider(color: Colors.white12, height: 1),
             const SizedBox(height: 14),
@@ -1081,6 +1150,9 @@ class _AdminAddCustomProductPageState extends State<AdminAddCustomProductPage> {
                   ),
                 );
               },
+            ),
+                ],
+              ),
             ),
           ],
         ],
@@ -1552,9 +1624,10 @@ class _AdminAddCustomProductPageState extends State<AdminAddCustomProductPage> {
 
               // 3. Pricing & Quantities
               _buildSectionTitle(
-                  'العملة والتسعير والكميات', Icons.payments_rounded),
-              _buildCurrencySelector(),
+                  'التسعير ونوع الصرافة والكميات', Icons.payments_rounded),
               _buildExchangeProductCard(),
+              const SizedBox(height: 12),
+              _buildCurrencySelector(),
               const SizedBox(height: 12),
 
               Container(

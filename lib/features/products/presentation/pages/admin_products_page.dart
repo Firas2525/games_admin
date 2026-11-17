@@ -2717,6 +2717,9 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                               'originalPrice': product.originalPrice,
                               'price': product.sellingPrice ?? product.originalPrice,
                               'image': product.image,
+                              'isExchange': product.isExchange,
+                              'exchangeUnitName': product.exchangeUnitName,
+                              'unitsPerDollar': product.unitsPerDollar,
                               'requiredFields': product.requiredFields.map((f) => {
                                 'label': f.label,
                                 'key': f.name,

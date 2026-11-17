@@ -40,6 +40,9 @@ class ProductEntity {
   final String? customImage;
   final bool isNameOverridden;
   final bool isImageOverridden;
+  final bool isExchange;
+  final String exchangeUnitName;
+  final double unitsPerDollar;
   final List<RequiredFieldEntity> requiredFields;
 
   const ProductEntity({
@@ -67,6 +70,9 @@ class ProductEntity {
     this.customImage,
     this.isNameOverridden = false,
     this.isImageOverridden = false,
+    this.isExchange = false,
+    this.exchangeUnitName = '',
+    this.unitsPerDollar = 1.0,
     required this.requiredFields,
   });
 
@@ -88,6 +94,9 @@ class ProductEntity {
     String? customImage,
     bool? isNameOverridden,
     bool? isImageOverridden,
+    bool? isExchange,
+    String? exchangeUnitName,
+    double? unitsPerDollar,
     double? discountPercent,
     double? priceBeforeDiscount,
   }) {
@@ -116,6 +125,9 @@ class ProductEntity {
       customImage: customImage ?? this.customImage,
       isNameOverridden: isNameOverridden ?? this.isNameOverridden,
       isImageOverridden: isImageOverridden ?? this.isImageOverridden,
+      isExchange: isExchange ?? this.isExchange,
+      exchangeUnitName: exchangeUnitName ?? this.exchangeUnitName,
+      unitsPerDollar: unitsPerDollar ?? this.unitsPerDollar,
       requiredFields: requiredFields,
     );
   }

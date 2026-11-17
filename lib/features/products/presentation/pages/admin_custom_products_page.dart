@@ -44,6 +44,9 @@ class _AdminCustomProductsPageState extends State<AdminCustomProductsPage> {
       'originalPrice': product.originalPrice,
       'price': product.sellingPrice ?? product.originalPrice,
       'image': product.image,
+      'isExchange': product.isExchange,
+      'exchangeUnitName': product.exchangeUnitName,
+      'unitsPerDollar': product.unitsPerDollar,
       'requiredFields': product.requiredFields.map((f) => {
         'label': f.label,
         'key': f.name,
@@ -427,6 +430,30 @@ class _AdminCustomProductsPageState extends State<AdminCustomProductsPage> {
                                                   ),
                                                 ),
                                               ),
+                                              if (product.isExchange)
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                                                    borderRadius: BorderRadius.circular(6),
+                                                    border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4)),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      const Icon(Icons.currency_exchange_rounded, size: 11, color: Color(0xFF34D399)),
+                                                      const SizedBox(width: 3),
+                                                      Text(
+                                                        'صرافة (${product.exchangeUnitName.isNotEmpty ? product.exchangeUnitName : "وحدات"})',
+                                                        style: const TextStyle(
+                                                          fontSize: 10,
+                                                          fontWeight: FontWeight.bold,
+                                                          color: Color(0xFF34D399),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
                                               Text(
                                                 'التكلفة: ${product.originalPrice > 0 ? product.originalPrice.toStringAsFixed(product.originalPrice < 0.01 ? 4 : 2) : '0'} ${product.currency}',
                                                 style: TextStyle(

@@ -48,7 +48,7 @@ class AdminAuthWrapper extends StatelessWidget {
   const AdminAuthWrapper({super.key});
 
   @override
-  Widget build(BuildContext context) { 
+  Widget build(BuildContext context) {
     return BlocBuilder<AdminAuthBloc, AdminAuthState>(
       builder: (context, state) {
         if (state is AdminAuthenticated) {

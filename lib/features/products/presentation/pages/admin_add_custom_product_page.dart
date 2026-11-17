@@ -57,6 +57,12 @@ class _AdminAddCustomProductPageState extends State<AdminAddCustomProductPage> {
       TextEditingController(text: '1');
   final TextEditingController _descriptionController = TextEditingController();
 
+  bool _isExchange = false;
+  final TextEditingController _exchangeUnitNameController =
+      TextEditingController(text: 'كوينز');
+  final TextEditingController _unitsPerDollarController =
+      TextEditingController(text: '1000');
+
   String? _uploadedImageUrl;
   Uint8List? _localPreviewBytes;
   bool _isUploadingImage = false;
@@ -140,6 +146,13 @@ class _AdminAddCustomProductPageState extends State<AdminAddCustomProductPage> {
           (p['maxCount'] ?? p['minCount'] ?? 1).toString();
       _uploadedImageUrl = p['image'];
       _descriptionController.text = p['description'] ?? '';
+      _isExchange = p['isExchange'] == true;
+      if (p['exchangeUnitName'] != null && p['exchangeUnitName'].toString().isNotEmpty) {
+        _exchangeUnitNameController.text = p['exchangeUnitName'].toString();
+      }
+      if (p['unitsPerDollar'] != null && (p['unitsPerDollar'] as num) > 0) {
+        _unitsPerDollarController.text = p['unitsPerDollar'].toString();
+      }
 
       final reqs = p['requiredFields'] as List? ?? [];
       for (final r in reqs) {
@@ -216,6 +229,8 @@ class _AdminAddCustomProductPageState extends State<AdminAddCustomProductPage> {
     _minQuantityController.dispose();
     _maxQuantityController.dispose();
     _descriptionController.dispose();
+    _exchangeUnitNameController.dispose();
+    _unitsPerDollarController.dispose();
     for (final f in _inputFields) {
       f.dispose();
     }
@@ -326,8 +341,20 @@ class _AdminAddCustomProductPageState extends State<AdminAddCustomProductPage> {
 
     final cost = double.tryParse(_originalPriceController.text.trim()) ?? 0.0;
     final price = double.tryParse(_priceController.text.trim()) ?? 0.0;
+    final unitsPerDollar = double.tryParse(_unitsPerDollarController.text.trim()) ?? 0.0;
 
-    if (price <= 0) {
+    if (_isExchange && unitsPerDollar <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('يرجى تحديد عدد الوحدات لكل 1 دولار بشكل صحيح (أكبر من 0)'),
+          backgroundColor: Color(0xFFF43F5E),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    if (!_isExchange && price <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('يرجى تحديد سعر بيع صحيح أكبر من الصفر'),
@@ -380,18 +407,28 @@ class _AdminAddCustomProductPageState extends State<AdminAddCustomProductPage> {
     setState(() => _isSaving = true);
 
     try {
+      final effectiveCost = (_isExchange && cost <= 0 && unitsPerDollar > 0)
+          ? (1.0 / unitsPerDollar)
+          : cost;
+      final effectivePrice = (_isExchange && price <= 0 && unitsPerDollar > 0)
+          ? (1.0 / unitsPerDollar)
+          : price;
+
       final payload = {
         'name': _nameController.text.trim(),
         'category': _categoryController.text.trim(),
         'mainCategory': _selectedMainCategory,
         'currency': _selectedCurrency == 'SYP' ? 'ل.س' : '\$',
-        'originalPrice': cost,
-        'price': price,
+        'originalPrice': effectiveCost,
+        'price': effectivePrice,
         'minCount': minCount,
         'maxCount': maxCount,
         'image': _uploadedImageUrl?.trim() ?? '',
         'description': _descriptionController.text.trim(),
         'requiredFields': fields,
+        'isExchange': _isExchange,
+        'exchangeUnitName': _exchangeUnitNameController.text.trim(),
+        'unitsPerDollar': unitsPerDollar > 0 ? unitsPerDollar : 1.0,
       };
 
       if (widget.initialProduct != null) {
@@ -852,6 +889,205 @@ class _AdminAddCustomProductPageState extends State<AdminAddCustomProductPage> {
     );
   }
 
+  Widget _buildExchangeProductCard() {
+    return Container(
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _isExchange
+            ? const Color(0xFF0284C7).withValues(alpha: 0.12)
+            : const Color(0xFF131F35),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _isExchange
+              ? const Color(0xFF38BDF8)
+              : Colors.white.withValues(alpha: 0.08),
+          width: _isExchange ? 1.5 : 1.0,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _isExchange
+                      ? const Color(0xFF0284C7)
+                      : Colors.white.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.currency_exchange_rounded,
+                  color: _isExchange ? Colors.white : Colors.white54,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'منتج تصريف (تحويل كميات / رصيد)',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'تحديد سعر بالوحدة (مثلاً: كل 1,000 كوينز = 1\$)',
+                      style: TextStyle(
+                        color: _isExchange ? const Color(0xFF38BDF8) : Colors.white38,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Switch(
+                value: _isExchange,
+                activeColor: const Color(0xFF38BDF8),
+                onChanged: (val) {
+                  setState(() {
+                    _isExchange = val;
+                    if (_isExchange) {
+                      final upd = double.tryParse(_unitsPerDollarController.text.trim()) ?? 1000.0;
+                      if (upd > 0) {
+                        final p = (1.0 / upd).toStringAsFixed(6);
+                        _priceController.text = p;
+                        _originalPriceController.text = p;
+                      }
+                    }
+                  });
+                },
+              ),
+            ],
+          ),
+          if (_isExchange) ...[
+            const SizedBox(height: 14),
+            const Divider(color: Colors.white12, height: 1),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'اسم الوحدة *',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        controller: _exchangeUnitNameController,
+                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                        decoration: _inputDecoration(
+                          hint: 'مثال: كوينز، جوهرة، نقطة',
+                          icon: Icons.token_rounded,
+                        ),
+                        onChanged: (_) => setState(() {}),
+                        validator: (v) => _isExchange && (v == null || v.trim().isEmpty) ? 'مطلوب' : null,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  flex: 4,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'كل كم وحدة = 1 دولار (\$)*',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        controller: _unitsPerDollarController,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                        decoration: _inputDecoration(
+                          hint: 'مثال: 1000',
+                          icon: Icons.numbers_rounded,
+                          suffixText: _exchangeUnitNameController.text.trim().isNotEmpty
+                              ? _exchangeUnitNameController.text.trim()
+                              : 'وحدة',
+                        ),
+                        onChanged: (v) {
+                          setState(() {
+                            final upd = double.tryParse(v.trim()) ?? 0.0;
+                            if (upd > 0) {
+                              final p = (1.0 / upd).toStringAsFixed(6);
+                              _priceController.text = p;
+                              _originalPriceController.text = p;
+                            }
+                          });
+                        },
+                        validator: (v) {
+                          if (!_isExchange) return null;
+                          final num = double.tryParse(v?.trim() ?? '');
+                          if (num == null || num <= 0) return 'قيمة أكبر من 0';
+                          return null;
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Builder(
+              builder: (_) {
+                final upd = double.tryParse(_unitsPerDollarController.text.trim()) ?? 0.0;
+                final unitName = _exchangeUnitNameController.text.trim().isNotEmpty
+                    ? _exchangeUnitNameController.text.trim()
+                    : 'وحدة';
+                if (upd <= 0) return const SizedBox.shrink();
+                final singleUnitPrice = (1.0 / upd);
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.04),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFF38BDF8)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '1\$ = ${upd.toInt()} $unitName  |  سعر $unitName واحدة = \$${singleUnitPrice.toStringAsFixed(6)}',
+                          style: const TextStyle(
+                            color: Color(0xFF38BDF8),
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildProfitPreviewBanner() {
     final profit = _profit;
     final pct = _profitPercentage;
@@ -1308,7 +1544,8 @@ class _AdminAddCustomProductPageState extends State<AdminAddCustomProductPage> {
               _buildSectionTitle(
                   'العملة والتسعير والكميات', Icons.payments_rounded),
               _buildCurrencySelector(),
-              const SizedBox(height: 10),
+              _buildExchangeProductCard(),
+              const SizedBox(height: 12),
 
               Container(
                 padding: const EdgeInsets.all(14),

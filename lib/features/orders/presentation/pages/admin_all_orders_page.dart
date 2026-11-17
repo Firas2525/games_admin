@@ -422,7 +422,7 @@ class _AdminAllOrdersPageState extends State<AdminAllOrdersPage> {
               ),
               const SizedBox(height: 8),
               const Text(
-                'أدخل رقم الطلب المسجل في لوحة المزود (مثل براند أو سيريا كارد) لجلب تفاصيله وتحديث حالة الطلب تلقائياً:',
+                'أدخل رقم الطلب المسجل في لوحة المزود (مثل براند أو رؤيا) لجلب تفاصيله وتحديث حالة الطلب تلقائياً:',
                 style: TextStyle(color: Colors.white60, fontSize: 11.5, height: 1.4),
               ),
               const SizedBox(height: 14),

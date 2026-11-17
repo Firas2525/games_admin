@@ -19,7 +19,7 @@ class _AdminLogsPageState extends State<AdminLogsPage> {
   String? _errorMessage;
 
   // Filters
-  String _selectedFilter = 'all'; // 'all', 'purchase', 'check', 'errors', 'brand1card', 'roya_usd', 'roya_syp', 'auto1card'
+  String _selectedFilter = 'all'; // 'all', 'purchase', 'check', 'errors', 'brand1card', 'roya_usd', 'roya_syp'
   String _searchQuery = '';
 
   // Multi-selection state
@@ -62,8 +62,6 @@ class _AdminLogsPageState extends State<AdminLogsPage> {
         queryParams['provider'] = 'roya_usd';
       } else if (_selectedFilter == 'roya_syp') {
         queryParams['provider'] = 'roya_syp';
-      } else if (_selectedFilter == 'auto1card') {
-        queryParams['provider'] = 'auto1card';
       }
 
       if (_searchQuery.isNotEmpty) {
@@ -786,8 +784,6 @@ class _AdminLogsPageState extends State<AdminLogsPage> {
                         _filterChip('رؤيا دولار', 'roya_usd'),
                         const SizedBox(width: 6),
                         _filterChip('رؤيا ليرة', 'roya_syp'),
-                        const SizedBox(width: 6),
-                        _filterChip('سيريا كارد', 'auto1card'),
                       ],
                     ),
                   ),

@@ -457,6 +457,22 @@ class AdminDrawer extends StatelessWidget {
                       );
                     },
                   ),
+
+                  // Provider API Logs Page
+                  _buildActionItem(
+                    icon: Icons.hub_rounded,
+                    iconColor: const Color(0xFF38BDF8),
+                    title: 'سجل اتصالات المزودين (APIs)',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AdminLogsPage(),
+                        ),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),

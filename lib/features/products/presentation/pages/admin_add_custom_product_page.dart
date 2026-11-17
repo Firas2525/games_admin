@@ -969,13 +969,16 @@ class _AdminAddCustomProductPageState extends State<AdminAddCustomProductPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 2,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             const Text(
-                              'منتج صرافة (تصريف كوينز / رصيد)',
+                              'منتج صرافة / تصريف',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 13.5,
+                                fontSize: 13,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -1004,8 +1007,10 @@ class _AdminAddCustomProductPageState extends State<AdminAddCustomProductPage> {
                           'تحديد سعر بالوحدة (مثلاً: كل 1,000 كوينز = 1\$)',
                           style: TextStyle(
                             color: _isExchange ? const Color(0xFF38BDF8) : Colors.white54,
-                            fontSize: 11,
+                            fontSize: 10.5,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),

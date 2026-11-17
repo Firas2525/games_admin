@@ -115,7 +115,9 @@ class _AdminLogsPageState extends State<AdminLogsPage> {
             children: const [
               Icon(Icons.delete_sweep_rounded, color: Color(0xFFEF4444), size: 22),
               SizedBox(width: 8),
-              Text('حذف السجلات المحددة', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+              Expanded(
+                child: Text('حذف السجلات المحددة', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+              ),
             ],
           ),
           content: Text(
@@ -184,7 +186,9 @@ class _AdminLogsPageState extends State<AdminLogsPage> {
             children: const [
               Icon(Icons.warning_amber_rounded, color: Color(0xFFEF4444), size: 24),
               SizedBox(width: 8),
-              Text('حذف كافة سجلات المزودين', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+              Expanded(
+                child: Text('حذف كافة سجلات المزودين', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+              ),
             ],
           ),
           content: const Text(
@@ -666,12 +670,16 @@ class _AdminLogsPageState extends State<AdminLogsPage> {
                   style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                 )
               : const Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.hub_rounded, color: Color(0xFF38BDF8), size: 22),
+                    Icon(Icons.hub_rounded, color: Color(0xFF38BDF8), size: 20),
                     SizedBox(width: 8),
-                    Text(
-                      'سجل اتصالات المزودين (APIs)',
-                      style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
+                    Flexible(
+                      child: Text(
+                        'سجل اتصالات المزودين',
+                        style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w900),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),
@@ -1071,21 +1079,31 @@ class _AdminLogsPageState extends State<AdminLogsPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: [
-                            if (orderId.isNotEmpty) ...[
-                              const Icon(Icons.receipt_outlined, size: 12, color: Color(0xFFFACC15)),
-                              const SizedBox(width: 3),
-                              Text('#$orderId', style: const TextStyle(color: Color(0xFFFACC15), fontSize: 10.5, fontWeight: FontWeight.bold)),
-                              const SizedBox(width: 8),
+                        Expanded(
+                          child: Row(
+                            children: [
+                              if (orderId.isNotEmpty) ...[
+                                const Icon(Icons.receipt_outlined, size: 12, color: Color(0xFFFACC15)),
+                                const SizedBox(width: 3),
+                                Text('#$orderId', style: const TextStyle(color: Color(0xFFFACC15), fontSize: 10.5, fontWeight: FontWeight.bold)),
+                                const SizedBox(width: 8),
+                              ],
+                              if (userName.isNotEmpty) ...[
+                                const Icon(Icons.person_outline, size: 12, color: Colors.white38),
+                                const SizedBox(width: 3),
+                                Flexible(
+                                  child: Text(
+                                    userName,
+                                    style: const TextStyle(color: Colors.white60, fontSize: 10.5),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
                             ],
-                            if (userName.isNotEmpty) ...[
-                              const Icon(Icons.person_outline, size: 12, color: Colors.white38),
-                              const SizedBox(width: 3),
-                              Text(userName, style: const TextStyle(color: Colors.white60, fontSize: 10.5)),
-                            ],
-                          ],
+                          ),
                         ),
+                        const SizedBox(width: 6),
                         Text(
                           createdAt.length >= 19 ? createdAt.substring(11, 19) : '',
                           style: const TextStyle(color: Colors.white24, fontSize: 10),

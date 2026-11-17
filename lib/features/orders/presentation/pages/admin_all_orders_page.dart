@@ -331,12 +331,17 @@ class _AdminAllOrdersPageState extends State<AdminAllOrdersPage> {
   }
 
   // --- Check Individual Order Status ---
-  Future<void> _checkSingleOrderStatus(Map<dynamic, dynamic> order) async {
+  Future<void> _checkSingleOrderStatus(Map<dynamic, dynamic> order, {String? manualProviderOrderId}) async {
     final orderId = (order['orderId'] ?? order['_id'] ?? order['id']).toString();
     setState(() => _checkingOrderIds.add(orderId));
 
     try {
-      final res = await sl<ApiClient>().post('/orders/$orderId/check-status');
+      final res = await sl<ApiClient>().post(
+        '/orders/$orderId/check-status',
+        data: manualProviderOrderId != null && manualProviderOrderId.isNotEmpty
+            ? {'providerOrderId': manualProviderOrderId}
+            : null,
+      );
       final updatedOrder = res.data?['data']?['order'];
       final message = res.data?['message'] ?? 'تم فحص حالة الطلب من المزود بنجاح';
 
@@ -381,6 +386,87 @@ class _AdminAllOrdersPageState extends State<AdminAllOrdersPage> {
         setState(() => _checkingOrderIds.remove(orderId));
       }
     }
+  }
+
+  void _promptManualProviderCheck(Map<dynamic, dynamic> order) {
+    final orderId = (order['orderId'] ?? order['_id'] ?? order['id']).toString();
+    final existingProviderId = (order['providerOrderId'] ?? '').toString();
+    final controller = TextEditingController(text: existingProviderId);
+
+    showDialog(
+      context: context,
+      builder: (dlgCtx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          backgroundColor: const Color(0xFF1E293B),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: const [
+              Icon(Icons.manage_search_rounded, color: Color(0xFFA855F7), size: 22),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'فحص بآيدي المزود يدوي',
+                  style: TextStyle(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'طلب التطبيق: #$orderId',
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'أدخل رقم الطلب المسجل في لوحة المزود (مثل براند أو سيريا كارد) لجلب تفاصيله وتحديث حالة الطلب تلقائياً:',
+                style: TextStyle(color: Colors.white60, fontSize: 11.5, height: 1.4),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: controller,
+                keyboardType: TextInputType.text,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+                decoration: InputDecoration(
+                  labelText: 'رقم الطلب في براند / المزود (Order ID)',
+                  labelStyle: const TextStyle(color: Colors.white54, fontSize: 12),
+                  hintText: 'مثال: 987654 أو UUID',
+                  hintStyle: const TextStyle(color: Colors.white24, fontSize: 11.5),
+                  prefixIcon: const Icon(Icons.confirmation_number_outlined, color: Color(0xFFA855F7), size: 18),
+                  filled: true,
+                  fillColor: const Color(0xFF0F172A),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dlgCtx),
+              child: const Text('إلغاء', style: TextStyle(color: Colors.white54)),
+            ),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFA855F7),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              icon: const Icon(Icons.search_rounded, size: 16),
+              label: const Text('فحص وجلب من المزود'),
+              onPressed: () {
+                final id = controller.text.trim();
+                if (id.isEmpty) return;
+                Navigator.pop(dlgCtx);
+                _checkSingleOrderStatus(order, manualProviderOrderId: id);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _copyToClipboard(String text, String label) {
@@ -2035,6 +2121,21 @@ class _AdminAllOrdersPageState extends State<AdminAllOrdersPage> {
                 onPressed: () {
                   Navigator.pop(ctx);
                   _checkSingleOrderStatus(order);
+                },
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFA855F7),
+                  side: const BorderSide(color: Color(0xFF9333EA)),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                icon: const Icon(Icons.manage_search_rounded, size: 16),
+                label: const Text('فحص يدوي برقم طلب المزود (Brand / Provider ID)'),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _promptManualProviderCheck(order);
                 },
               ),
 

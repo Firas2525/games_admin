@@ -1322,75 +1322,85 @@ class _AdminAddCustomProductPageState extends State<AdminAddCustomProductPage> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    alignment: WrapAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'نوع الإدخال:',
-                        style: TextStyle(color: Colors.white60, fontSize: 11),
-                      ),
-                      const SizedBox(width: 8),
-                      ...[
-                        {'key': 'text', 'label': 'نص / آيدي'},
-                        {'key': 'number', 'label': 'أرقام فقط'},
-                        {'key': 'phone', 'label': 'رقم هاتف'},
-                      ].map((t) {
-                        final isSel = field.type == t['key'];
-                        return Padding(
-                          padding: const EdgeInsets.only(left: 6),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(6),
-                            onTap: () =>
-                                setState(() => field.type = t['key'] as String),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: isSel
-                                    ? const Color(0xFF0284C7)
-                                        .withValues(alpha: 0.25)
-                                    : Colors.white.withValues(alpha: 0.04),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(
-                                  color: isSel
-                                      ? const Color(0xFF38BDF8)
-                                      : Colors.transparent,
-                                ),
-                              ),
-                              child: Text(
-                                t['label'] as String,
-                                style: TextStyle(
-                                  color: isSel
-                                      ? const Color(0xFF38BDF8)
-                                      : Colors.white60,
-                                  fontSize: 10.5,
-                                  fontWeight: isSel
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
-                      const Spacer(),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          Checkbox(
-                            value: field.required,
-                            activeColor: const Color(0xFF10B981),
-                            materialTapTargetSize:
-                                MaterialTapTargetSize.shrinkWrap,
-                            visualDensity: VisualDensity.compact,
-                            onChanged: (v) =>
-                                setState(() => field.required = v ?? true),
-                          ),
                           const Text(
-                            'إجباري',
-                            style:
-                                TextStyle(color: Colors.white70, fontSize: 11),
+                            'نوع الإدخال:',
+                            style: TextStyle(color: Colors.white60, fontSize: 11),
                           ),
+                          ...[
+                            {'key': 'text', 'label': 'نص / آيدي'},
+                            {'key': 'number', 'label': 'أرقام فقط'},
+                            {'key': 'phone', 'label': 'رقم هاتف'},
+                          ].map((t) {
+                            final isSel = field.type == t['key'];
+                            return InkWell(
+                              borderRadius: BorderRadius.circular(6),
+                              onTap: () =>
+                                  setState(() => field.type = t['key'] as String),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: isSel
+                                      ? const Color(0xFF0284C7)
+                                          .withValues(alpha: 0.25)
+                                      : Colors.white.withValues(alpha: 0.04),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: isSel
+                                        ? const Color(0xFF38BDF8)
+                                        : Colors.transparent,
+                                  ),
+                                ),
+                                child: Text(
+                                  t['label'] as String,
+                                  style: TextStyle(
+                                    color: isSel
+                                        ? const Color(0xFF38BDF8)
+                                        : Colors.white60,
+                                    fontSize: 10.5,
+                                    fontWeight: isSel
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
                         ],
+                      ),
+                      InkWell(
+                        onTap: () => setState(() => field.required = !field.required),
+                        borderRadius: BorderRadius.circular(6),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Checkbox(
+                              value: field.required,
+                              activeColor: const Color(0xFF10B981),
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
+                              visualDensity: VisualDensity.compact,
+                              onChanged: (v) =>
+                                  setState(() => field.required = v ?? true),
+                            ),
+                            const Text(
+                              'إجباري',
+                              style:
+                                  TextStyle(color: Colors.white70, fontSize: 11),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),

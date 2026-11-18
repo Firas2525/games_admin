@@ -1061,10 +1061,11 @@ class _AdminDepositMethodFormPageState extends State<AdminDepositMethodFormPage>
     );
   }
 
-  InputDecoration _inputDecoration({required String label, required IconData icon}) {
+  InputDecoration _inputDecoration({required String label, required IconData icon, String? hint}) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: Colors.white60, fontSize: 12.5),
+      hintText: hint,
+      hintStyle: const TextStyle(color: Colors.white24, fontSize: 12),
       prefixIcon: Icon(icon, color: const Color(0xFF38BDF8), size: 20),
       filled: true,
       fillColor: const Color(0xFF162032),

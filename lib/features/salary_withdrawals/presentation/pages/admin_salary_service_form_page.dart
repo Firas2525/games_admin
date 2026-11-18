@@ -28,7 +28,9 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
   late TextEditingController _coinsPerUnitCtrl;
   late TextEditingController _dollarsPerUnitCtrl;
   final TextEditingController _newFieldCtrl = TextEditingController();
+  final TextEditingController _testQtyCtrl = TextEditingController(text: '10000');
 
+  double _exchangeRateUsdToSyp = 15000.0;
   bool _isEdit = false;
   bool _isActive = true;
   String _withdrawalType = 'coins'; // 'coins' or 'dollars'
@@ -42,6 +44,7 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
   @override
   void initState() {
     super.initState();
+    _loadExchangeRate();
     _isEdit = widget.service != null;
     final s = widget.service;
 
@@ -50,7 +53,7 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
     _adminReceiverIdCtrl = TextEditingController(text: _isEdit ? (s['adminReceiverId'] ?? '') : '');
     _minCtrl = TextEditingController(text: _isEdit ? (s['minQuantity']?.toString() ?? '1') : '1');
     _maxCtrl = TextEditingController(text: _isEdit ? (s['maxQuantity']?.toString() ?? '10000') : '10000');
-    _withdrawalType = _isEdit ? (s['withdrawalType'] ?? 'coins') : 'coins';
+    _withdrawalType = 'coins';
     _unitNameCtrl = TextEditingController(text: _isEdit ? (s['unitName'] ?? 'كوينز') : 'كوينز');
     _feePercentageCtrl = TextEditingController(text: _isEdit ? (s['feePercentage']?.toString() ?? '0') : '0');
     _coinsPerUnitCtrl = TextEditingController(text: _isEdit ? (s['coinsPerUnit']?.toString() ?? '1000') : '1000');
@@ -65,6 +68,23 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
     }
   }
 
+  Future<void> _loadExchangeRate() async {
+    try {
+      final dio = sl<ApiClient>().dio;
+      final res = await dio.get('/settings');
+      if (res.data != null && res.data['data'] != null) {
+        final buyRate = (res.data['data']['exchangeRateUsdToSypBuy'] as num?)?.toDouble();
+        final baseRate = (res.data['data']['exchangeRateUsdToSyp'] as num?)?.toDouble();
+        final rate = buyRate ?? baseRate;
+        if (rate != null && rate > 0 && mounted) {
+          setState(() {
+            _exchangeRateUsdToSyp = rate;
+          });
+        }
+      }
+    } catch (_) {}
+  }
+
   @override
   void dispose() {
     _nameCtrl.dispose();
@@ -77,6 +97,7 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
     _coinsPerUnitCtrl.dispose();
     _dollarsPerUnitCtrl.dispose();
     _newFieldCtrl.dispose();
+    _testQtyCtrl.dispose();
     super.dispose();
   }
 
@@ -162,16 +183,14 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
     final coinsUnit = double.tryParse(_coinsPerUnitCtrl.text.trim()) ?? 1000.0;
     final dollarsUnit = double.tryParse(_dollarsPerUnitCtrl.text.trim()) ?? 1.0;
     final feePercentage = double.tryParse(_feePercentageCtrl.text.trim()) ?? 0.0;
-    final unitName = _withdrawalType == 'coins'
-        ? (_unitNameCtrl.text.trim().isNotEmpty ? _unitNameCtrl.text.trim() : 'كوينز')
-        : 'دولار';
+    final unitName = _unitNameCtrl.text.trim().isNotEmpty ? _unitNameCtrl.text.trim() : 'كوينز';
 
     final body = {
       'name': _nameCtrl.text.trim(),
       'description': _descCtrl.text.trim(),
       'imageUrl': finalImageUrl,
       'adminReceiverId': _adminReceiverIdCtrl.text.trim(),
-      'withdrawalType': _withdrawalType,
+      'withdrawalType': 'coins',
       'coinsPerUnit': coinsUnit,
       'dollarsPerUnit': dollarsUnit,
       'unitName': unitName,
@@ -524,7 +543,7 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
   }
 
   Widget _buildWithdrawalTypeSection() {
-    final isCoins = _withdrawalType == 'coins';
+    final uName = _unitNameCtrl.text.trim().isNotEmpty ? _unitNameCtrl.text.trim() : 'وحدة';
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -541,231 +560,242 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
               Icon(Icons.currency_exchange_rounded, color: Color(0xFF38BDF8), size: 18),
               SizedBox(width: 8),
               Text(
-                'نوع السحب ومعدل التحويل للدولار *',
+                'معادلة التحويل وعمولة السحب *',
                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
+          const Text(
+            'جميع الخدمات تعتمد على نظام الوحدات (نقاط / كوينزات). إذا كان التطبيق يتعامل بالدولار المباشر، اكتب اسم الوحدة "دولار" واجعل كل 1 دولار = 1 دولار.',
+            style: TextStyle(color: Colors.white60, fontSize: 11, height: 1.4),
+          ),
+          const SizedBox(height: 14),
 
-          // Segmented choices
+          // Custom Unit Name Input
+          TextFormField(
+            controller: _unitNameCtrl,
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            decoration: _inputDecoration(
+              'اسم الوحدة * (يكتب يدوياً)',
+              'مثال: كوينزات، توكنز، نقاط، ماسات، دولار...',
+              icon: Icons.label_important_rounded,
+            ),
+            validator: (val) {
+              if (val == null || val.trim().isEmpty) {
+                return 'يرجى تحديد اسم الوحدة (مثل: كوينزات، نقاط، دولار...)';
+              }
+              return null;
+            },
+            onChanged: (_) => setState(() {}),
+          ),
+          const SizedBox(height: 14),
+
+          Text(
+            'معادلة التحويل (كل كمية من $uName كم تساوي بالدولار):',
+            style: const TextStyle(color: Colors.white70, fontSize: 11.5, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
           Row(
             children: [
               Expanded(
-                child: InkWell(
-                  onTap: () => setState(() => _withdrawalType = 'coins'),
-                  borderRadius: BorderRadius.circular(10),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(vertical: 11),
-                    decoration: BoxDecoration(
-                      color: isCoins ? const Color(0xFF0284C7) : const Color(0xFF0B1322),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: isCoins ? const Color(0xFF38BDF8) : const Color(0xFF334155),
-                      ),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        '🪙 كوينزات / نقاط',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
-                      ),
-                    ),
+                flex: 3,
+                child: TextFormField(
+                  controller: _coinsPerUnitCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: _inputDecoration(
+                    'كمية $uName',
+                    'مثال: 1000',
                   ),
+                  validator: (val) {
+                    final v = double.tryParse(val?.trim() ?? '');
+                    if (v == null || v <= 0) return 'أدخل كمية صحيحة';
+                    return null;
+                  },
+                  onChanged: (_) => setState(() {}),
                 ),
               ),
-              const SizedBox(width: 10),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8),
+                child: Text('=', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 18, fontWeight: FontWeight.bold)),
+              ),
               Expanded(
-                child: InkWell(
-                  onTap: () => setState(() => _withdrawalType = 'dollars'),
-                  borderRadius: BorderRadius.circular(10),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(vertical: 11),
-                    decoration: BoxDecoration(
-                      color: !isCoins ? const Color(0xFF10B981) : const Color(0xFF0B1322),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: !isCoins ? const Color(0xFF34D399) : const Color(0xFF334155),
-                      ),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        '💵 دولار مباشر',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
-                      ),
-                    ),
-                  ),
+                flex: 2,
+                child: TextFormField(
+                  controller: _dollarsPerUnitCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: _inputDecoration('المقابل بالدولار (\$)', 'مثال: 1.0'),
+                  validator: (val) {
+                    final v = double.tryParse(val?.trim() ?? '');
+                    if (v == null || v <= 0) return 'أدخل قيمة صالحة';
+                    return null;
+                  },
+                  onChanged: (_) => setState(() {}),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 14),
 
-          if (isCoins) ...[
-            // Custom Unit Name Input (Required for non-direct-dollar)
-            TextFormField(
-              controller: _unitNameCtrl,
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              decoration: _inputDecoration(
-                'اسم الوحدة * (يكتب يدوياً)',
-                'مثال: كوينزات، توكنز، نقاط، ماسات...',
-                icon: Icons.label_important_rounded,
-              ),
-              validator: (val) {
-                if (_withdrawalType == 'coins') {
-                  if (val == null || val.trim().isEmpty) {
-                    return 'يرجى تحديد اسم الوحدة (مثل: كوينزات، توكنز...)';
-                  }
-                }
-                return null;
-              },
-              onChanged: (_) => setState(() {}),
+          // Commission / Fee percentage
+          TextFormField(
+            controller: _feePercentageCtrl,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            decoration: _inputDecoration(
+              'نسبة عمولة السحب (%) - تخصم من التحويل وتضاف لأرباح المنصة',
+              'مثال: 5 (أي خصم 5% عمولة، اكتب 0 إذا كانت بدون عمولة)',
+              icon: Icons.percent_rounded,
             ),
-            const SizedBox(height: 14),
+            validator: (val) {
+              if (val != null && val.trim().isNotEmpty) {
+                final v = double.tryParse(val.trim());
+                if (v == null || v < 0 || v > 100) return 'النسبة يجب أن تكون بين 0 و 100';
+              }
+              return null;
+            },
+            onChanged: (_) => setState(() {}),
+          ),
+          const SizedBox(height: 14),
 
-            Text(
-              'حدد معادلة التحويل (كل كمية ${_unitNameCtrl.text.trim().isNotEmpty ? _unitNameCtrl.text.trim() : "وحدة"} كم تساوي بالدولار):',
-              style: const TextStyle(color: Colors.white70, fontSize: 11.5),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: TextFormField(
-                    controller: _coinsPerUnitCtrl,
-                    keyboardType: TextInputType.number,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: _inputDecoration(
-                      'كمية ${_unitNameCtrl.text.trim().isNotEmpty ? _unitNameCtrl.text.trim() : "الوحدة"}',
-                      'مثال: 1000',
+          // Live Simulator & Tester Box
+          Builder(
+            builder: (_) {
+              final cUnit = double.tryParse(_coinsPerUnitCtrl.text.trim()) ?? 1000.0;
+              final dUnit = double.tryParse(_dollarsPerUnitCtrl.text.trim()) ?? 1.0;
+              final fee = double.tryParse(_feePercentageCtrl.text.trim()) ?? 0.0;
+
+              final testQty = double.tryParse(_testQtyCtrl.text.trim()) ?? 0.0;
+              final validCUnit = cUnit > 0 ? cUnit : 1.0;
+              final validDUnit = dUnit > 0 ? dUnit : 1.0;
+              final testGross = (testQty / validCUnit) * validDUnit;
+              final testFee = (testGross * fee) / 100.0;
+              final testNet = (testGross - testFee).clamp(0.0, double.infinity);
+              final testNetSyp = (testNet * _exchangeRateUsdToSyp).round();
+
+              return Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0B1322),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.35)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.science_rounded, color: Color(0xFF38BDF8), size: 17),
+                        const SizedBox(width: 6),
+                        const Text(
+                          'أداة اختبار ومحاكاة الحسابات للمدير',
+                          style: TextStyle(
+                            color: Color(0xFF38BDF8),
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF38BDF8).withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '1\$ = ${_exchangeRateUsdToSyp.toStringAsFixed(0)} ل.س',
+                            style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 10, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
                     ),
-                    validator: (val) {
-                      if (_withdrawalType == 'coins') {
-                        final v = double.tryParse(val?.trim() ?? '');
-                        if (v == null || v <= 0) return 'أدخل كمية صحيحة';
-                      }
-                      return null;
-                    },
-                    onChanged: (_) => setState(() {}),
-                  ),
-                ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8),
-                  child: Text('=', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 18, fontWeight: FontWeight.bold)),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: TextFormField(
-                    controller: _dollarsPerUnitCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    style: const TextStyle(color: Colors.white),
-                    decoration: _inputDecoration('المقابل (\$)', 'مثال: 1.0'),
-                    validator: (val) {
-                      if (_withdrawalType == 'coins') {
-                        final v = double.tryParse(val?.trim() ?? '');
-                        if (v == null || v <= 0) return 'أدخل قيمة صالحة';
-                      }
-                      return null;
-                    },
-                    onChanged: (_) => setState(() {}),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
+                    const SizedBox(height: 8),
+                    Text(
+                      'المعادلة المعتمدة: كل ${_coinsPerUnitCtrl.text.trim().isNotEmpty ? _coinsPerUnitCtrl.text.trim() : "1000"} $uName = \$${_dollarsPerUnitCtrl.text.trim().isNotEmpty ? _dollarsPerUnitCtrl.text.trim() : "1.0"} | عمولة: $fee%',
+                      style: const TextStyle(color: Colors.white70, fontSize: 11),
+                    ),
+                    const SizedBox(height: 10),
 
-            // Commission / Fee percentage
-            TextFormField(
-              controller: _feePercentageCtrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              decoration: _inputDecoration(
-                'نسبة عمولة السحب (%) - تضاف للأرباح وتخصم من التحويل',
-                'مثال: 5 (أي خصم 5% عمولة، اكتب 0 إذا كانت بدون عمولة)',
-                icon: Icons.percent_rounded,
-              ),
-              validator: (val) {
-                if (val != null && val.trim().isNotEmpty) {
-                  final v = double.tryParse(val.trim());
-                  if (v == null || v < 0 || v > 100) return 'النسبة يجب أن تكون بين 0 و 100';
-                }
-                return null;
-              },
-              onChanged: (_) => setState(() {}),
-            ),
-            const SizedBox(height: 10),
+                    // Test input
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _testQtyCtrl,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                            decoration: InputDecoration(
+                              labelText: 'كمية تجريبية للاختبار',
+                              labelStyle: const TextStyle(color: Colors.white60, fontSize: 11),
+                              suffixText: uName,
+                              suffixStyle: const TextStyle(color: Color(0xFF38BDF8), fontSize: 11.5, fontWeight: FontWeight.bold),
+                              isDense: true,
+                              filled: true,
+                              fillColor: const Color(0xFF131F35),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+                              ),
+                            ),
+                            onChanged: (_) => setState(() {}),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
 
-            // Live explanation box
-            Builder(
-              builder: (_) {
-                final uName = _unitNameCtrl.text.trim().isNotEmpty ? _unitNameCtrl.text.trim() : 'وحدة';
-                final cUnit = _coinsPerUnitCtrl.text.trim().isNotEmpty ? _coinsPerUnitCtrl.text.trim() : '1000';
-                final dUnit = _dollarsPerUnitCtrl.text.trim().isNotEmpty ? _dollarsPerUnitCtrl.text.trim() : '1.0';
-                final fee = double.tryParse(_feePercentageCtrl.text.trim()) ?? 0.0;
-                final sampleGross = double.tryParse(dUnit) ?? 1.0;
-                final sampleFee = (sampleGross * fee) / 100;
-                final sampleNet = (sampleGross - sampleFee).clamp(0.0, double.infinity);
-
-                return Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0B1322),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFF0284C7).withValues(alpha: 0.35)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+                    // Simulation Results
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF131F35),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                      ),
+                      child: Column(
                         children: [
-                          const Icon(Icons.calculate_rounded, color: Color(0xFF38BDF8), size: 16),
-                          const SizedBox(width: 6),
-                          Text(
-                            'المعادلة المعتمدة: كل $cUnit $uName = \$$dUnit',
-                            style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 12, fontWeight: FontWeight.bold),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('القيمة الإجمالية قبل الخصم:', style: TextStyle(color: Colors.white60, fontSize: 11)),
+                              Text('\$${testGross.toStringAsFixed(2)} USD', style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('أرباح المنصة المخصومة ($fee%):', style: const TextStyle(color: Color(0xFFF59E0B), fontSize: 11)),
+                              Text('-\$${testFee.toStringAsFixed(2)} USD', style: const TextStyle(color: Color(0xFFF59E0B), fontSize: 11.5, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                          const Divider(color: Colors.white12, height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('صافي رصيد المستخدم بالدولار:', style: TextStyle(color: Color(0xFF34D399), fontSize: 11.5, fontWeight: FontWeight.bold)),
+                              Text('\$${testNet.toStringAsFixed(2)} USD', style: const TextStyle(color: Color(0xFF34D399), fontSize: 13, fontWeight: FontWeight.w900)),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('المقابل للمستخدم السوري (ل.س):', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.w600)),
+                              Text('${testNetSyp.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')} ل.س', style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 12, fontWeight: FontWeight.bold)),
+                            ],
                           ),
                         ],
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        fee > 0
-                            ? '• عمولة السحب: $fee% (ربح إضافي للمنصة).\n• مثال: عند تحويل $cUnit $uName بقيمة \$$sampleGross، يُخصم \$$sampleFee ويستلم الزبون صافي: \$${sampleNet.toStringAsFixed(2)} بالدولار (أو بالليرة السورية حسب سعر الصرف إذا كان حسابه سوري).'
-                            : '• بدون عمولة إضافية: يستلم الزبون كامل المبلغ بالدولار (أو بالليرة السورية حسب سعر الصرف إذا كان حسابه سوري).',
-                        style: TextStyle(
-                          color: fee > 0 ? const Color(0xFFF59E0B) : Colors.white70,
-                          fontSize: 11,
-                          height: 1.45,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ] else ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF0B1322),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 16),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'سحب مباشر بالدولار: الكمية التي يطلبها المستخدم هي دولارات مباشرة (1\$ = 1\$) وتضاف لمحفظته فور موافقتك (أو بالليرة السورية حسب سعر الصرف إذا كان حسابه سوري).',
-                      style: TextStyle(color: Colors.white70, fontSize: 11.5),
                     ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+                  ],
+                ),
+              );
+            },
+          ),
         ],
       ),
     );

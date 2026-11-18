@@ -26,13 +26,32 @@ class _AdminSalaryWithdrawalsPageState extends State<AdminSalaryWithdrawalsPage>
   // Services state
   bool _isLoadingServices = false;
   List<dynamic> _services = [];
+  double _exchangeRateUsdToSyp = 15000.0;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _loadExchangeRate();
     _loadRequests();
     _loadServices();
+  }
+
+  Future<void> _loadExchangeRate() async {
+    try {
+      final dio = sl<ApiClient>().dio;
+      final res = await dio.get('/settings');
+      if (res.data != null && res.data['data'] != null) {
+        final buyRate = (res.data['data']['exchangeRateUsdToSypBuy'] as num?)?.toDouble();
+        final baseRate = (res.data['data']['exchangeRateUsdToSyp'] as num?)?.toDouble();
+        final rate = buyRate ?? baseRate;
+        if (rate != null && rate > 0 && mounted) {
+          setState(() {
+            _exchangeRateUsdToSyp = rate;
+          });
+        }
+      }
+    } catch (_) {}
   }
 
   @override
@@ -315,6 +334,155 @@ class _AdminSalaryWithdrawalsPageState extends State<AdminSalaryWithdrawalsPage>
     if (result == true) {
       _loadServices();
     }
+  }
+
+  void _openSimulatorDialog(dynamic service) {
+    final title = (service['name'] ?? '').toString();
+    final unitName = (service['unitName'] ?? 'كوينز').toString();
+    final coinsPerUnit = (service['coinsPerUnit'] as num?)?.toDouble() ?? 1000.0;
+    final dollarsPerUnit = (service['dollarsPerUnit'] as num?)?.toDouble() ?? 1.0;
+    final feePercentage = (service['feePercentage'] as num?)?.toDouble() ?? 0.0;
+
+    final testCtrl = TextEditingController(text: coinsPerUnit.toInt().toString());
+
+    showDialog(
+      context: context,
+      builder: (dlgCtx) => StatefulBuilder(
+        builder: (ctx, setDlgState) {
+          final testQty = double.tryParse(testCtrl.text.trim()) ?? 0.0;
+          final validCUnit = coinsPerUnit > 0 ? coinsPerUnit : 1.0;
+          final validDUnit = dollarsPerUnit > 0 ? dollarsPerUnit : 1.0;
+          final testGross = (testQty / validCUnit) * validDUnit;
+          final testFee = (testGross * feePercentage) / 100.0;
+          final testNet = (testGross - testFee).clamp(0.0, double.infinity);
+          final testNetSyp = (testNet * _exchangeRateUsdToSyp).round();
+
+          return Directionality(
+            textDirection: TextDirection.rtl,
+            child: AlertDialog(
+              backgroundColor: _kCard,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: const BorderSide(color: _kAccent, width: 1.5),
+              ),
+              title: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: _kAccent.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.science_rounded, color: _kAccent, size: 22),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('اختبار حاسبة السحب', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                        Text(title, style: const TextStyle(color: _kAccent, fontSize: 12, fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: _kInner,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.white10),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('المعادلة: كل ${coinsPerUnit.toInt()} $unitName = \$$dollarsPerUnit USD', style: const TextStyle(color: _kAccent, fontSize: 12, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 4),
+                          Text('نسبة العمولة: $feePercentage% (أرباح المنصة)', style: TextStyle(color: feePercentage > 0 ? _kAmber : Colors.white70, fontSize: 11.5, fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    const Text('أدخل كمية للتجربة:', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: testCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                      decoration: InputDecoration(
+                        suffixText: unitName,
+                        suffixStyle: const TextStyle(color: _kAccent, fontWeight: FontWeight.bold),
+                        filled: true,
+                        fillColor: _kInner,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      ),
+                      onChanged: (_) => setDlgState(() {}),
+                    ),
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: _kInner,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: _kGreen.withValues(alpha: 0.3)),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('الإجمالي قبل الخصم:', style: TextStyle(color: Colors.white60, fontSize: 11.5)),
+                              Text('\$${testGross.toStringAsFixed(2)} USD', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('أرباح المنصة المخصومة ($feePercentage%):', style: const TextStyle(color: _kAmber, fontSize: 11.5)),
+                              Text('-\$${testFee.toStringAsFixed(2)} USD', style: const TextStyle(color: _kAmber, fontSize: 12, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                          const Divider(color: Colors.white12, height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('صافي المحفظة بالدولار:', style: TextStyle(color: _kGreen, fontSize: 12, fontWeight: FontWeight.bold)),
+                              Text('\$${testNet.toStringAsFixed(2)} USD', style: const TextStyle(color: _kGreen, fontSize: 15, fontWeight: FontWeight.w900)),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('المقابل للمستخدم السوري:', style: TextStyle(color: _kBlue, fontSize: 11.5)),
+                              Text('${testNetSyp.toString().replaceAllMapped(RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"), (m) => "${m[1]},")} ل.س', style: const TextStyle(color: _kBlue, fontSize: 13, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dlgCtx),
+                  child: const Text('إغلاق', style: TextStyle(color: Colors.white70)),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 
   Future<void> _deleteService(dynamic service) async {
@@ -1496,6 +1664,71 @@ class _AdminSalaryWithdrawalsPageState extends State<AdminSalaryWithdrawalsPage>
                   ],
                 ),
               ),
+
+            // Conversion rate, commission & Test calculator
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: _kInner,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: _kAccent.withValues(alpha: 0.2)),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.currency_exchange_rounded, size: 14, color: _kAccent),
+                              const SizedBox(width: 5),
+                              Text(
+                                'كل ${_formatNum(service['coinsPerUnit'] ?? 1000)} ${service['unitName'] ?? 'كوينز'} = \$${service['dollarsPerUnit'] ?? 1.0}',
+                                style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            (service['feePercentage'] as num? ?? 0) > 0
+                                ? '• نسبة العمولة المخصومة للمنصة: ${(service['feePercentage'] as num).toDouble()}%'
+                                : '• بدون عمولة سحب إضافية (0%)',
+                            style: TextStyle(
+                              color: (service['feePercentage'] as num? ?? 0) > 0 ? _kAmber : Colors.white60,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () => _openSimulatorDialog(service),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: _kAccent.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: _kAccent.withValues(alpha: 0.4)),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.science_rounded, size: 13, color: _kAccent),
+                            SizedBox(width: 4),
+                            Text('اختبار 🧪', style: TextStyle(color: _kAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
 
             const SizedBox(height: 12),
 

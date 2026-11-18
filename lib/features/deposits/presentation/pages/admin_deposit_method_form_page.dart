@@ -27,7 +27,9 @@ class _AdminDepositMethodFormPageState extends State<AdminDepositMethodFormPage>
   late TextEditingController _instructionsController;
   late TextEditingController _currencyUnitController;
   late TextEditingController _ratePerUsdController;
+  final TextEditingController _newFieldCtrl = TextEditingController();
 
+  List<String> _requiredFields = [];
   late String _selectedCurrency;
   late String _selectedIcon;
   late bool _isEnabled;
@@ -72,6 +74,12 @@ class _AdminDepositMethodFormPageState extends State<AdminDepositMethodFormPage>
     _isEnabled = m?['isEnabled'] ?? true;
     _requiresReceiptImage = m?['requiresReceiptImage'] ?? false;
     _requiresVerification = m?['requiresVerification'] ?? false;
+
+    if (m?['requiredFields'] is List) {
+      _requiredFields = List<String>.from(m!['requiredFields']);
+    } else {
+      _requiredFields = ['رقم العملية / إشعار التحويل'];
+    }
   }
 
   @override
@@ -86,6 +94,7 @@ class _AdminDepositMethodFormPageState extends State<AdminDepositMethodFormPage>
     _instructionsController.dispose();
     _currencyUnitController.dispose();
     _ratePerUsdController.dispose();
+    _newFieldCtrl.dispose();
     super.dispose();
   }
 
@@ -188,6 +197,7 @@ class _AdminDepositMethodFormPageState extends State<AdminDepositMethodFormPage>
       'isEnabled': _isEnabled,
       'requiresReceiptImage': _requiresReceiptImage,
       'requiresVerification': _requiresVerification,
+      'requiredFields': _requiredFields,
     };
 
     try {
@@ -778,6 +788,13 @@ class _AdminDepositMethodFormPageState extends State<AdminDepositMethodFormPage>
                 ),
               ]),
 
+              const SizedBox(height: 24),
+
+              // Section 7: Required Fields
+              _buildSectionHeader('7. الحقول المطلوبة من الزبون عند الإيداع 📋', Icons.playlist_add_check_rounded),
+              const SizedBox(height: 12),
+              _buildRequiredFieldsSection(),
+
               const SizedBox(height: 32),
 
               // Save Button
@@ -834,6 +851,185 @@ class _AdminDepositMethodFormPageState extends State<AdminDepositMethodFormPage>
         children: children,
       ),
     );
+  }
+
+  Widget _buildRequiredFieldsSection() {
+    return _buildCardContainer([
+      const Row(
+        children: [
+          Icon(Icons.playlist_add_check_rounded, color: Color(0xFF38BDF8), size: 20),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'حدد الحقول المطلوب من الزبون إدخالها عند طلب الإيداع:',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 6),
+      const Text(
+        'يمكنك تخصيص وتغيير أسماء الحقول حسب نوع الحوالة (مثال: رقم العملية، رقم الهاتف، اسم المحول، إلخ).',
+        style: TextStyle(color: Colors.white60, fontSize: 11, height: 1.4),
+      ),
+      const SizedBox(height: 12),
+
+      // Active Fields Chips
+      if (_requiredFields.isEmpty)
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.3)),
+          ),
+          child: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Color(0xFFEF4444), size: 16),
+              SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'لم تقم بإضافة أي حقول مطلوبة! يُنصح بإضافة حقل "رقم العملية" على الأقل ليتمكن الزبون من إثبات التحويل.',
+                  style: TextStyle(color: Color(0xFFFCA5A5), fontSize: 11),
+                ),
+              ),
+            ],
+          ),
+        )
+      else
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _requiredFields.map((f) {
+            return Chip(
+              backgroundColor: const Color(0xFF0F172A),
+              side: BorderSide(color: const Color(0xFF0284C7).withValues(alpha: 0.45)),
+              label: Text(
+                f,
+                style: const TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.bold),
+              ),
+              deleteIcon: const Icon(Icons.close_rounded, size: 16, color: Color(0xFFEF4444)),
+              onDeleted: () {
+                setState(() {
+                  _requiredFields.remove(f);
+                });
+              },
+            );
+          }).toList(),
+        ),
+
+      const SizedBox(height: 14),
+      const Divider(color: Colors.white12),
+      const SizedBox(height: 10),
+
+      // Input for custom field
+      Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _newFieldCtrl,
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+              decoration: _inputDecoration(
+                label: 'اسم حقل مخصص جديد',
+                hint: 'مثال: رقم الحساب المحول منه، اسم المستلم...',
+                icon: Icons.edit_note_rounded,
+              ),
+              onSubmitted: (_) => _addNewField(),
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0284C7),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: _addNewField,
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text('إضافة'),
+          ),
+        ],
+      ),
+      const SizedBox(height: 12),
+
+      // Quick Presets
+      const Text(
+        'اختصارات سريعة للحقول المقترحة (اضغط للإضافة السريعة):',
+        style: TextStyle(color: Colors.white38, fontSize: 11),
+      ),
+      const SizedBox(height: 6),
+      Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        children: [
+          _presetChip('رقم العملية / إشعار التحويل'),
+          _presetChip('رقم الهاتف المحول منه'),
+          _presetChip('اسم صاحب الحساب المحول منه'),
+          _presetChip('معرف الحساب / الآيدي'),
+          _presetChip('الرقم المرجعي (TxID / Hash)'),
+          _presetChip('اسم البنك أو الفرع'),
+          _presetChip('ملاحظات إضافية للتحويل'),
+        ],
+      ),
+    ]);
+  }
+
+  Widget _presetChip(String label) {
+    final alreadyAdded = _requiredFields.contains(label);
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: () {
+        if (!alreadyAdded) {
+          setState(() {
+            _requiredFields.add(label);
+          });
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+        decoration: BoxDecoration(
+          color: alreadyAdded
+              ? const Color(0xFF10B981).withValues(alpha: 0.15)
+              : Colors.white.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: alreadyAdded
+                ? const Color(0xFF10B981).withValues(alpha: 0.4)
+                : Colors.white12,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              alreadyAdded ? Icons.check_circle_rounded : Icons.add_circle_outline_rounded,
+              size: 13,
+              color: alreadyAdded ? const Color(0xFF10B981) : Colors.white60,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: alreadyAdded ? const Color(0xFF34D399) : Colors.white70,
+                fontSize: 11,
+                fontWeight: alreadyAdded ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _addNewField() {
+    final text = _newFieldCtrl.text.trim();
+    if (text.isNotEmpty && !_requiredFields.contains(text)) {
+      setState(() {
+        _requiredFields.add(text);
+        _newFieldCtrl.clear();
+      });
+    }
   }
 
   Widget _buildCurrencyChip({required String code, required String title, required Color color}) {

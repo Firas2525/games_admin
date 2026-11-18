@@ -763,6 +763,26 @@ class _AdminDepositMethodsPageState extends State<AdminDepositMethodsPage> {
                     style: TextStyle(color: Colors.grey.shade300, fontSize: 11),
                   ),
                 ),
+                if ((m['requiredFields'] is List) && (m['requiredFields'] as List).isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0284C7).withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(7),
+                      border: Border.all(color: const Color(0xFF0284C7).withValues(alpha: 0.45)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.playlist_add_check_rounded, size: 12, color: Color(0xFF38BDF8)),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${(m['requiredFields'] as List).length} حقول مطلوبة',
+                          style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF38BDF8)),
+                        ),
+                      ],
+                    ),
+                  ),
                 if (requiresReceiptImage)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),

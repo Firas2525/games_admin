@@ -12,10 +12,12 @@ class AdminSalaryServiceFormPage extends StatefulWidget {
   const AdminSalaryServiceFormPage({super.key, this.service});
 
   @override
-  State<AdminSalaryServiceFormPage> createState() => _AdminSalaryServiceFormPageState();
+  State<AdminSalaryServiceFormPage> createState() =>
+      _AdminSalaryServiceFormPageState();
 }
 
-class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage> {
+class _AdminSalaryServiceFormPageState
+    extends State<AdminSalaryServiceFormPage> {
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _nameCtrl;
@@ -28,7 +30,9 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
   late TextEditingController _coinsPerUnitCtrl;
   late TextEditingController _dollarsPerUnitCtrl;
   final TextEditingController _newFieldCtrl = TextEditingController();
-  final TextEditingController _testQtyCtrl = TextEditingController(text: '10000');
+  final TextEditingController _testQtyCtrl = TextEditingController(
+    text: '10000',
+  );
 
   double _exchangeRateUsdToSyp = 15000.0;
   bool _isEdit = false;
@@ -49,15 +53,31 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
     final s = widget.service;
 
     _nameCtrl = TextEditingController(text: _isEdit ? (s['name'] ?? '') : '');
-    _descCtrl = TextEditingController(text: _isEdit ? (s['description'] ?? '') : '');
-    _adminReceiverIdCtrl = TextEditingController(text: _isEdit ? (s['adminReceiverId'] ?? '') : '');
-    _minCtrl = TextEditingController(text: _isEdit ? (s['minQuantity']?.toString() ?? '1') : '1');
-    _maxCtrl = TextEditingController(text: _isEdit ? (s['maxQuantity']?.toString() ?? '10000') : '10000');
+    _descCtrl = TextEditingController(
+      text: _isEdit ? (s['description'] ?? '') : '',
+    );
+    _adminReceiverIdCtrl = TextEditingController(
+      text: _isEdit ? (s['adminReceiverId'] ?? '') : '',
+    );
+    _minCtrl = TextEditingController(
+      text: _isEdit ? (s['minQuantity']?.toString() ?? '1') : '1',
+    );
+    _maxCtrl = TextEditingController(
+      text: _isEdit ? (s['maxQuantity']?.toString() ?? '10000') : '10000',
+    );
     _withdrawalType = 'coins';
-    _unitNameCtrl = TextEditingController(text: _isEdit ? (s['unitName'] ?? 'كوينز') : 'كوينز');
-    _feePercentageCtrl = TextEditingController(text: _isEdit ? (s['feePercentage']?.toString() ?? '0') : '0');
-    _coinsPerUnitCtrl = TextEditingController(text: _isEdit ? (s['coinsPerUnit']?.toString() ?? '1000') : '1000');
-    _dollarsPerUnitCtrl = TextEditingController(text: _isEdit ? (s['dollarsPerUnit']?.toString() ?? '1.0') : '1.0');
+    _unitNameCtrl = TextEditingController(
+      text: _isEdit ? (s['unitName'] ?? 'كوينز') : 'كوينز',
+    );
+    _feePercentageCtrl = TextEditingController(
+      text: _isEdit ? (s['feePercentage']?.toString() ?? '0') : '0',
+    );
+    _coinsPerUnitCtrl = TextEditingController(
+      text: _isEdit ? (s['coinsPerUnit']?.toString() ?? '1000') : '1000',
+    );
+    _dollarsPerUnitCtrl = TextEditingController(
+      text: _isEdit ? (s['dollarsPerUnit']?.toString() ?? '1.0') : '1.0',
+    );
     _isActive = _isEdit ? (s['isActive'] ?? true) : true;
     _existingImageUrl = _isEdit ? (s['imageUrl'] as String?) : null;
 
@@ -73,8 +93,10 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
       final dio = sl<ApiClient>().dio;
       final res = await dio.get('/settings');
       if (res.data != null && res.data['data'] != null) {
-        final buyRate = (res.data['data']['exchangeRateUsdToSypBuy'] as num?)?.toDouble();
-        final baseRate = (res.data['data']['exchangeRateUsdToSyp'] as num?)?.toDouble();
+        final buyRate = (res.data['data']['exchangeRateUsdToSypBuy'] as num?)
+            ?.toDouble();
+        final baseRate = (res.data['data']['exchangeRateUsdToSyp'] as num?)
+            ?.toDouble();
         final rate = buyRate ?? baseRate;
         if (rate != null && rate > 0 && mounted) {
           setState(() {
@@ -133,10 +155,10 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
     try {
       final base64String = 'data:image/jpeg;base64,${base64Encode(bytes)}';
       final dio = sl<ApiClient>().dio;
-      final uploadRes = await dio.post('/banners/upload', data: {
-        'file': base64String,
-        'uploadPreset': 'ml_default',
-      });
+      final uploadRes = await dio.post(
+        '/banners/upload',
+        data: {'file': base64String, 'uploadPreset': 'ml_default'},
+      );
 
       if (uploadRes.data != null && uploadRes.data['data'] != null) {
         final url = uploadRes.data['data']['url'] as String?;
@@ -154,7 +176,8 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
   Future<void> _submitForm() async {
     if (_formKey.currentState?.validate() != true) return;
 
-    if (_pickedImageBytes == null && (_existingImageUrl == null || _existingImageUrl!.isEmpty)) {
+    if (_pickedImageBytes == null &&
+        (_existingImageUrl == null || _existingImageUrl!.isEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('يرجى اختيار صورة للتطبيق من الاستديو'),
@@ -182,8 +205,11 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
     final maxQ = double.tryParse(_maxCtrl.text.trim()) ?? 10000.0;
     final coinsUnit = double.tryParse(_coinsPerUnitCtrl.text.trim()) ?? 1000.0;
     final dollarsUnit = double.tryParse(_dollarsPerUnitCtrl.text.trim()) ?? 1.0;
-    final feePercentage = double.tryParse(_feePercentageCtrl.text.trim()) ?? 0.0;
-    final unitName = _unitNameCtrl.text.trim().isNotEmpty ? _unitNameCtrl.text.trim() : 'كوينز';
+    final feePercentage =
+        double.tryParse(_feePercentageCtrl.text.trim()) ?? 0.0;
+    final unitName = _unitNameCtrl.text.trim().isNotEmpty
+        ? _unitNameCtrl.text.trim()
+        : 'كوينز';
 
     final body = {
       'name': _nameCtrl.text.trim(),
@@ -204,7 +230,10 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
     try {
       final dio = sl<ApiClient>().dio;
       if (_isEdit) {
-        await dio.put('/salary-withdrawals/admin/services/${widget.service['_id']}', data: body);
+        await dio.put(
+          '/salary-withdrawals/admin/services/${widget.service['_id']}',
+          data: body,
+        );
       } else {
         await dio.post('/salary-withdrawals/admin/services', data: body);
       }
@@ -212,7 +241,11 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_isEdit ? 'تم تحديث تطبيق السحب بنجاح' : 'تم إضافة تطبيق السحب بنجاح ✅'),
+            content: Text(
+              _isEdit
+                  ? 'تم تحديث تطبيق السحب بنجاح'
+                  : 'تم إضافة تطبيق السحب بنجاح ✅',
+            ),
             backgroundColor: const Color(0xFF10B981),
           ),
         );
@@ -241,12 +274,20 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
           backgroundColor: const Color(0xFF0F172A),
           elevation: 2,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 20),
+            icon: const Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
             _isEdit ? 'تعديل تطبيق سحب' : 'إضافة تطبيق سحب',
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: Colors.white),
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 17,
+              color: Colors.white,
+            ),
           ),
         ),
         body: SingleChildScrollView(
@@ -294,7 +335,10 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
                 // 3.1 Admin Receiver ID (حساب الآدمن للاستلام)
                 TextFormField(
                   controller: _adminReceiverIdCtrl,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                   decoration: _inputDecoration(
                     'ID حساب الآدمن للاستلام *',
                     'مثال: 987654321 (الآيدي الذي سيقوم المستخدم بتحويل الرصيد إليه داخل التطبيق)',
@@ -324,7 +368,8 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
                         decoration: _inputDecoration('أقل كمية *', '1'),
                         validator: (val) {
                           final numVal = double.tryParse(val?.trim() ?? '');
-                          if (numVal == null || numVal <= 0) return 'أدخل رقماً صحيحاً';
+                          if (numVal == null || numVal <= 0)
+                            return 'أدخل رقماً صحيحاً';
                           return null;
                         },
                       ),
@@ -338,7 +383,8 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
                         decoration: _inputDecoration('أكبر كمية *', '10000'),
                         validator: (val) {
                           final numVal = double.tryParse(val?.trim() ?? '');
-                          if (numVal == null || numVal <= 0) return 'أدخل رقماً صحيحاً';
+                          if (numVal == null || numVal <= 0)
+                            return 'أدخل رقماً صحيحاً';
                           return null;
                         },
                       ),
@@ -356,13 +402,22 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
                   decoration: BoxDecoration(
                     color: const Color(0xFF131F35),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.08),
+                    ),
                   ),
                   child: SwitchListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 4,
+                    ),
                     title: const Text(
                       'تفعيل التطبيق',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
                     ),
                     subtitle: const Text(
                       'يظهر مباشرة للمستخدمين في قسم سحب الرواتب',
@@ -381,7 +436,9 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
                     backgroundColor: const Color(0xFF0284C7),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                     elevation: 3,
                   ),
                   onPressed: _isSaving ? null : _submitForm,
@@ -392,18 +449,31 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
                             const SizedBox(
                               width: 20,
                               height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             ),
                             const SizedBox(width: 12),
                             Text(
-                              _isUploadingImage ? 'جاري رفع الصورة...' : 'جاري الحفظ...',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                              _isUploadingImage
+                                  ? 'جاري رفع الصورة...'
+                                  : 'جاري الحفظ...',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
                             ),
                           ],
                         )
                       : Text(
-                          _isEdit ? 'حفظ التعديلات ✅' : 'نشر تطبيق السحب الآن 🚀',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          _isEdit
+                              ? 'حفظ التعديلات ✅'
+                              : 'نشر تطبيق السحب الآن 🚀',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                 ),
                 const SizedBox(height: 30),
@@ -417,7 +487,8 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
 
   Widget _buildImagePickerBox() {
     final hasPicked = _pickedImageBytes != null;
-    final hasExisting = _existingImageUrl != null && _existingImageUrl!.isNotEmpty;
+    final hasExisting =
+        _existingImageUrl != null && _existingImageUrl!.isNotEmpty;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -451,7 +522,9 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFF38BDF8),
                     side: const BorderSide(color: Color(0xFF38BDF8)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                   onPressed: _pickImageFromGallery,
                   icon: const Icon(Icons.sync_rounded, size: 16),
@@ -459,7 +532,9 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
                 ),
                 const SizedBox(width: 8),
                 TextButton.icon(
-                  style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.redAccent,
+                  ),
                   onPressed: () {
                     setState(() {
                       _pickedImageBytes = null;
@@ -490,7 +565,9 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
               style: OutlinedButton.styleFrom(
                 foregroundColor: const Color(0xFF38BDF8),
                 side: const BorderSide(color: Color(0xFF38BDF8)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
               onPressed: _pickImageFromGallery,
               icon: const Icon(Icons.photo_library_rounded, size: 16),
@@ -501,7 +578,10 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
               onTap: _pickImageFromGallery,
               borderRadius: BorderRadius.circular(12),
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 20,
+                  horizontal: 16,
+                ),
                 child: Column(
                   children: [
                     Container(
@@ -510,7 +590,9 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
                       decoration: BoxDecoration(
                         color: const Color(0xFF0284C7).withValues(alpha: 0.15),
                         shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFF0284C7).withValues(alpha: 0.4)),
+                        border: Border.all(
+                          color: const Color(0xFF0284C7).withValues(alpha: 0.4),
+                        ),
                       ),
                       child: const Icon(
                         Icons.add_photo_alternate_rounded,
@@ -543,25 +625,37 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
   }
 
   Widget _buildWithdrawalTypeSection() {
-    final uName = _unitNameCtrl.text.trim().isNotEmpty ? _unitNameCtrl.text.trim() : 'وحدة';
+    final uName = _unitNameCtrl.text.trim().isNotEmpty
+        ? _unitNameCtrl.text.trim()
+        : 'وحدة';
 
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: const Color(0xFF131F35),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF0284C7).withValues(alpha: 0.3)),
+        border: Border.all(
+          color: const Color(0xFF0284C7).withValues(alpha: 0.3),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Row(
             children: [
-              Icon(Icons.currency_exchange_rounded, color: Color(0xFF38BDF8), size: 18),
+              Icon(
+                Icons.currency_exchange_rounded,
+                color: Color(0xFF38BDF8),
+                size: 18,
+              ),
               SizedBox(width: 8),
               Text(
                 'معادلة التحويل وعمولة السحب *',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13.5,
+                ),
               ),
             ],
           ),
@@ -575,7 +669,10 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
           // Custom Unit Name Input
           TextFormField(
             controller: _unitNameCtrl,
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
             decoration: _inputDecoration(
               'اسم الوحدة * (يكتب يدوياً)',
               'مثال: كوينزات، توكنز، نقاط، ماسات، دولار...',
@@ -593,7 +690,11 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
 
           Text(
             'معادلة التحويل (كل كمية من $uName كم تساوي بالدولار):',
-            style: const TextStyle(color: Colors.white70, fontSize: 11.5, fontWeight: FontWeight.w600),
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 8),
           Row(
@@ -602,12 +703,11 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
                 flex: 3,
                 child: TextFormField(
                   controller: _coinsPerUnitCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  style: const TextStyle(color: Colors.white),
-                  decoration: _inputDecoration(
-                    'كمية $uName',
-                    'مثال: 1000',
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
                   ),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: _inputDecoration('كمية $uName', 'مثال: 1000'),
                   validator: (val) {
                     final v = double.tryParse(val?.trim() ?? '');
                     if (v == null || v <= 0) return 'أدخل كمية صحيحة';
@@ -618,15 +718,27 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
               ),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 8),
-                child: Text('=', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 18, fontWeight: FontWeight.bold)),
+                child: Text(
+                  '=',
+                  style: TextStyle(
+                    color: Color(0xFF38BDF8),
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
               Expanded(
                 flex: 2,
                 child: TextFormField(
                   controller: _dollarsPerUnitCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   style: const TextStyle(color: Colors.white),
-                  decoration: _inputDecoration('المقابل بالدولار (\$)', 'مثال: 1.0'),
+                  decoration: _inputDecoration(
+                    'المقابل بالدولار (\$)',
+                    'مثال: 1.0',
+                  ),
                   validator: (val) {
                     final v = double.tryParse(val?.trim() ?? '');
                     if (v == null || v <= 0) return 'أدخل قيمة صالحة';
@@ -643,7 +755,10 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
           TextFormField(
             controller: _feePercentageCtrl,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
             decoration: _inputDecoration(
               'نسبة عمولة السحب (%) - تخصم من التحويل وتضاف لأرباح المنصة',
               'مثال: 5 (أي خصم 5% عمولة، اكتب 0 إذا كانت بدون عمولة)',
@@ -652,7 +767,8 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
             validator: (val) {
               if (val != null && val.trim().isNotEmpty) {
                 final v = double.tryParse(val.trim());
-                if (v == null || v < 0 || v > 100) return 'النسبة يجب أن تكون بين 0 و 100';
+                if (v == null || v < 0 || v > 100)
+                  return 'النسبة يجب أن تكون بين 0 و 100';
               }
               return null;
             },
@@ -663,9 +779,12 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
           // Live Simulator & Tester Box
           Builder(
             builder: (_) {
-              final cUnit = double.tryParse(_coinsPerUnitCtrl.text.trim()) ?? 1000.0;
-              final dUnit = double.tryParse(_dollarsPerUnitCtrl.text.trim()) ?? 1.0;
-              final fee = double.tryParse(_feePercentageCtrl.text.trim()) ?? 0.0;
+              final cUnit =
+                  double.tryParse(_coinsPerUnitCtrl.text.trim()) ?? 1000.0;
+              final dUnit =
+                  double.tryParse(_dollarsPerUnitCtrl.text.trim()) ?? 1.0;
+              final fee =
+                  double.tryParse(_feePercentageCtrl.text.trim()) ?? 0.0;
 
               final testQty = double.tryParse(_testQtyCtrl.text.trim()) ?? 0.0;
               final validCUnit = cUnit > 0 ? cUnit : 1.0;
@@ -680,14 +799,20 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
                 decoration: BoxDecoration(
                   color: const Color(0xFF0B1322),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.35)),
+                  border: Border.all(
+                    color: const Color(0xFF38BDF8).withValues(alpha: 0.35),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.science_rounded, color: Color(0xFF38BDF8), size: 17),
+                        const Icon(
+                          Icons.science_rounded,
+                          color: Color(0xFF38BDF8),
+                          size: 17,
+                        ),
                         const SizedBox(width: 6),
                         const Text(
                           'أداة اختبار ومحاكاة الحسابات للمدير',
@@ -699,14 +824,23 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
                         ),
                         const Spacer(),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF38BDF8).withValues(alpha: 0.15),
+                            color: const Color(
+                              0xFF38BDF8,
+                            ).withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
                             '1\$ = ${_exchangeRateUsdToSyp.toStringAsFixed(0)} ل.س',
-                            style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 10, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              color: Color(0xFF38BDF8),
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ],
@@ -714,7 +848,10 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
                     const SizedBox(height: 8),
                     Text(
                       'المعادلة المعتمدة: كل ${_coinsPerUnitCtrl.text.trim().isNotEmpty ? _coinsPerUnitCtrl.text.trim() : "1000"} $uName = \$${_dollarsPerUnitCtrl.text.trim().isNotEmpty ? _dollarsPerUnitCtrl.text.trim() : "1.0"} | عمولة: $fee%',
-                      style: const TextStyle(color: Colors.white70, fontSize: 11),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 11,
+                      ),
                     ),
                     const SizedBox(height: 10),
 
@@ -724,20 +861,38 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
                         Expanded(
                           child: TextFormField(
                             controller: _testQtyCtrl,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
                             decoration: InputDecoration(
                               labelText: 'كمية تجريبية للاختبار',
-                              labelStyle: const TextStyle(color: Colors.white60, fontSize: 11),
+                              labelStyle: const TextStyle(
+                                color: Colors.white60,
+                                fontSize: 11,
+                              ),
                               suffixText: uName,
-                              suffixStyle: const TextStyle(color: Color(0xFF38BDF8), fontSize: 11.5, fontWeight: FontWeight.bold),
+                              suffixStyle: const TextStyle(
+                                color: Color(0xFF38BDF8),
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.bold,
+                              ),
                               isDense: true,
                               filled: true,
                               fillColor: const Color(0xFF131F35),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 8,
+                              ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+                                borderSide: BorderSide(
+                                  color: Colors.white.withValues(alpha: 0.15),
+                                ),
                               ),
                             ),
                             onChanged: (_) => setState(() {}),
@@ -753,39 +908,95 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
                       decoration: BoxDecoration(
                         color: const Color(0xFF131F35),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.08),
+                        ),
                       ),
                       child: Column(
                         children: [
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('القيمة الإجمالية قبل الخصم:', style: TextStyle(color: Colors.white60, fontSize: 11)),
-                              Text('\$${testGross.toStringAsFixed(2)} USD', style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.bold)),
+                              const Text(
+                                'القيمة الإجمالية قبل الخصم:',
+                                style: TextStyle(
+                                  color: Colors.white60,
+                                  fontSize: 11,
+                                ),
+                              ),
+                              Text(
+                                '\$${testGross.toStringAsFixed(2)} USD',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 4),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('أرباح المنصة المخصومة ($fee%):', style: const TextStyle(color: Color(0xFFF59E0B), fontSize: 11)),
-                              Text('-\$${testFee.toStringAsFixed(2)} USD', style: const TextStyle(color: Color(0xFFF59E0B), fontSize: 11.5, fontWeight: FontWeight.bold)),
+                              Text(
+                                'أرباح المنصة المخصومة ($fee%):',
+                                style: const TextStyle(
+                                  color: Color(0xFFF59E0B),
+                                  fontSize: 11,
+                                ),
+                              ),
+                              Text(
+                                '-\$${testFee.toStringAsFixed(2)} USD',
+                                style: const TextStyle(
+                                  color: Color(0xFFF59E0B),
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ],
                           ),
                           const Divider(color: Colors.white12, height: 12),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('صافي رصيد المستخدم بالدولار:', style: TextStyle(color: Color(0xFF34D399), fontSize: 11.5, fontWeight: FontWeight.bold)),
-                              Text('\$${testNet.toStringAsFixed(2)} USD', style: const TextStyle(color: Color(0xFF34D399), fontSize: 13, fontWeight: FontWeight.w900)),
+                              const Text(
+                                'صافي رصيد المستخدم بالدولار:',
+                                style: TextStyle(
+                                  color: Color(0xFF34D399),
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                '\$${testNet.toStringAsFixed(2)} USD',
+                                style: const TextStyle(
+                                  color: Color(0xFF34D399),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 4),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('المقابل للمستخدم السوري (ل.س):', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.w600)),
-                              Text('${testNetSyp.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')} ل.س', style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 12, fontWeight: FontWeight.bold)),
+                              const Text(
+                                'المقابل للمستخدم السوري (ل.س):',
+                                style: TextStyle(
+                                  color: Color(0xFF38BDF8),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Text(
+                                '${testNetSyp.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')} ل.س',
+                                style: const TextStyle(
+                                  color: Color(0xFF38BDF8),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ],
                           ),
                         ],
@@ -814,11 +1025,19 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
         children: [
           const Row(
             children: [
-              Icon(Icons.playlist_add_check_rounded, color: Color(0xFF38BDF8), size: 20),
+              Icon(
+                Icons.playlist_add_check_rounded,
+                color: Color(0xFF38BDF8),
+                size: 20,
+              ),
               SizedBox(width: 8),
               Text(
                 'البيانات المطلوبة من المستخدم لتنفيذ السحب:',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
               ),
             ],
           ),
@@ -837,9 +1056,18 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
               children: _requiredFields.map((f) {
                 return Chip(
                   backgroundColor: const Color(0xFF0F172A),
-                  side: BorderSide(color: const Color(0xFF0284C7).withValues(alpha: 0.4)),
-                  label: Text(f, style: const TextStyle(color: Colors.white, fontSize: 13)),
-                  deleteIcon: const Icon(Icons.close, size: 16, color: Colors.redAccent),
+                  side: BorderSide(
+                    color: const Color(0xFF0284C7).withValues(alpha: 0.4),
+                  ),
+                  label: Text(
+                    f,
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
+                  ),
+                  deleteIcon: const Icon(
+                    Icons.close,
+                    size: 16,
+                    color: Colors.redAccent,
+                  ),
                   onDeleted: () {
                     setState(() {
                       _requiredFields.remove(f);
@@ -860,7 +1088,10 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
                 child: TextField(
                   controller: _newFieldCtrl,
                   style: const TextStyle(color: Colors.white, fontSize: 13),
-                  decoration: _inputDecoration('اسم حقل مخصص', 'مثال: رقم الحساب، معرف اللعبة...'),
+                  decoration: _inputDecoration(
+                    'اسم حقل مخصص',
+                    'مثال: رقم الحساب، معرف اللعبة...',
+                  ),
                   onSubmitted: (_) => _addNewField(),
                 ),
               ),
@@ -869,8 +1100,13 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0284C7),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 14,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
                 onPressed: _addNewField,
                 icon: const Icon(Icons.add, size: 18),
@@ -881,7 +1117,10 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
           const SizedBox(height: 10),
 
           // Quick Presets
-          const Text('اختصارات سريعة:', style: TextStyle(color: Colors.white38, fontSize: 11)),
+          const Text(
+            'اختصارات سريعة:',
+            style: TextStyle(color: Colors.white38, fontSize: 11),
+          ),
           const SizedBox(height: 6),
           Wrap(
             spacing: 6,
@@ -912,8 +1151,12 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
   Widget _presetChip(String label) {
     final already = _requiredFields.contains(label);
     return ActionChip(
-      backgroundColor: already ? const Color(0xFF0284C7).withValues(alpha: 0.3) : const Color(0xFF0F172A),
-      side: BorderSide(color: already ? const Color(0xFF38BDF8) : Colors.white12),
+      backgroundColor: already
+          ? const Color(0xFF0284C7).withValues(alpha: 0.3)
+          : const Color(0xFF0F172A),
+      side: BorderSide(
+        color: already ? const Color(0xFF38BDF8) : Colors.white12,
+      ),
       label: Text(
         '+ $label',
         style: TextStyle(
@@ -931,13 +1174,19 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
     );
   }
 
-  InputDecoration _inputDecoration(String label, String hint, {IconData? icon}) {
+  InputDecoration _inputDecoration(
+    String label,
+    String hint, {
+    IconData? icon,
+  }) {
     return InputDecoration(
       labelText: label,
       labelStyle: const TextStyle(color: Colors.white70, fontSize: 13),
       hintText: hint,
       hintStyle: const TextStyle(color: Colors.white24, fontSize: 12),
-      prefixIcon: icon != null ? Icon(icon, color: const Color(0xFF38BDF8), size: 18) : null,
+      prefixIcon: icon != null
+          ? Icon(icon, color: const Color(0xFF38BDF8), size: 18)
+          : null,
       filled: true,
       fillColor: const Color(0xFF0F172A),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -956,4 +1205,3 @@ class _AdminSalaryServiceFormPageState extends State<AdminSalaryServiceFormPage>
     );
   }
 }
-

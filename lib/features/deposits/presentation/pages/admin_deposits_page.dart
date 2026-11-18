@@ -955,6 +955,73 @@ class _AdminDepositsPageState extends State<AdminDepositsPage> {
                   ),
                 ),
 
+                // Custom dynamic fields data submitted by customer
+                Builder(
+                  builder: (_) {
+                    final rawFieldsData = dep['fieldsData'];
+                    final fieldsDataMap = rawFieldsData is Map ? Map<String, dynamic>.from(rawFieldsData) : null;
+                    if (fieldsDataMap == null || fieldsDataMap.isEmpty) return const SizedBox.shrink();
+
+                    return Container(
+                      margin: const EdgeInsets.only(top: 8),
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF090E1A),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFF0284C7).withValues(alpha: 0.35)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(Icons.playlist_add_check_rounded, size: 14, color: Color(0xFF38BDF8)),
+                              SizedBox(width: 5),
+                              Text(
+                                'بيانات الإيداع المطلوبة من الزبون:',
+                                style: TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          ...fieldsDataMap.entries.map((entry) {
+                            final k = entry.key.toString();
+                            final v = entry.value?.toString() ?? '';
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 3),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('$k: ', style: TextStyle(color: Colors.grey.shade400, fontSize: 11.5, fontWeight: FontWeight.w600)),
+                                  Expanded(
+                                    child: SelectableText(
+                                      v,
+                                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  if (v.isNotEmpty)
+                                    InkWell(
+                                      onTap: () {
+                                        Clipboard.setData(ClipboardData(text: v));
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('تم نسخ $k ✅'), duration: const Duration(seconds: 1)),
+                                        );
+                                      },
+                                      child: const Padding(
+                                        padding: EdgeInsets.only(right: 6),
+                                        child: Icon(Icons.copy_rounded, color: Colors.white60, size: 14),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+
                 if (receiptImage.toString().isNotEmpty) ...[
                   const SizedBox(height: 8),
                   InkWell(

@@ -70,6 +70,7 @@ class _AdminAddCustomProductPageState extends State<AdminAddCustomProductPage> {
   String _selectedMainCategory = 'games';
   String _selectedCurrency = 'USD';
   bool _isSaving = false;
+  List<String> _availableSubcategories = [];
 
   final List<CustomInputFieldConfig> _inputFields = [];
 
@@ -130,7 +131,8 @@ class _AdminAddCustomProductPageState extends State<AdminAddCustomProductPage> {
   @override
   void initState() {
     super.initState();
-    _loadDynamicCategories();
+    _loadDynamicCategories().then((_) => _loadSubcategories());
+    _loadSubcategories();
 
     if (widget.initialProduct != null) {
       final p = widget.initialProduct!;
@@ -218,6 +220,28 @@ class _AdminAddCustomProductPageState extends State<AdminAddCustomProductPage> {
     } catch (_) {
       // Keep default categories fallback
     }
+  }
+
+  Future<void> _loadSubcategories() async {
+    try {
+      final res = await sl<ApiClient>().dio.get(
+        '/products/subcategories',
+        queryParameters: {'mainCategory': _selectedMainCategory, 'admin': 'true'},
+      );
+      if (res.data != null && res.data['data'] is List) {
+        final list = (res.data['data'] as List)
+            .map((item) => (item['name'] ?? '').toString().trim())
+            .where((name) => name.isNotEmpty)
+            .toSet()
+            .toList();
+        list.sort();
+        if (mounted) {
+          setState(() {
+            _availableSubcategories = list;
+          });
+        }
+      }
+    } catch (_) {}
   }
 
   @override
@@ -594,6 +618,117 @@ class _AdminAddCustomProductPageState extends State<AdminAddCustomProductPage> {
     );
   }
 
+  Widget _buildSubcategorySuggestions() {
+    final text = _categoryController.text.trim();
+    final isNew = text.isNotEmpty &&
+        !_availableSubcategories.any((s) => s.toLowerCase() == text.toLowerCase());
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (text.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+            decoration: BoxDecoration(
+              color: isNew
+                  ? const Color(0xFF0284C7).withValues(alpha: 0.15)
+                  : const Color(0xFF10B981).withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isNew
+                    ? const Color(0xFF38BDF8).withValues(alpha: 0.4)
+                    : const Color(0xFF34D399).withValues(alpha: 0.4),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  isNew ? Icons.create_new_folder_rounded : Icons.check_circle_rounded,
+                  size: 16,
+                  color: isNew ? const Color(0xFF38BDF8) : const Color(0xFF34D399),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    isNew
+                        ? 'مجلد جديد: سيتم إنشاء مجلد "$text" تلقائياً ووضع هذا المنتج داخله.'
+                        : 'مجلد موجود: سيتم وضع هذا المنتج داخل مجلد "$text" الحالي.',
+                    style: TextStyle(
+                      color: isNew ? const Color(0xFF38BDF8) : const Color(0xFF34D399),
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+        if (_availableSubcategories.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          const Text(
+            'مجلدات متوفرة في هذا القسم (اضغط للاختيار السريع):',
+            style: TextStyle(
+              color: Colors.white54,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: _availableSubcategories.map((sub) {
+              final isSelected = sub.toLowerCase() == text.toLowerCase();
+              return InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () {
+                  setState(() {
+                    _categoryController.text = sub;
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? const Color(0xFF0284C7).withValues(alpha: 0.3)
+                        : Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isSelected
+                          ? const Color(0xFF38BDF8)
+                          : Colors.white12,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isSelected ? Icons.folder_rounded : Icons.folder_outlined,
+                        size: 13,
+                        color: isSelected ? const Color(0xFF38BDF8) : Colors.white60,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        sub,
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : Colors.white70,
+                          fontSize: 11.5,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ],
+    );
+  }
+
   Widget _buildSectionTitle(String title, IconData icon) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10, top: 6),
@@ -778,7 +913,10 @@ class _AdminAddCustomProductPageState extends State<AdminAddCustomProductPage> {
 
           return InkWell(
             borderRadius: BorderRadius.circular(12),
-            onTap: () => setState(() => _selectedMainCategory = key),
+            onTap: () {
+              setState(() => _selectedMainCategory = key);
+              _loadSubcategories();
+            },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -1599,10 +1737,12 @@ class _AdminAddCustomProductPageState extends State<AdminAddCustomProductPage> {
                         hint: 'مثال: ببجي موبايل / فري فاير / نتفلكس',
                         icon: Icons.folder_open_rounded,
                       ),
+                      onChanged: (_) => setState(() {}),
                       validator: (v) => v == null || v.trim().isEmpty
                           ? 'يرجى تحديد المجلد أو اللعبة'
                           : null,
                     ),
+                    _buildSubcategorySuggestions(),
                     const SizedBox(height: 12),
                     const Text(
                       'وصف أو ملاحظات للزبون (اختياري)',

@@ -359,43 +359,47 @@ class _AdminLogsPageState extends State<AdminLogsPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF0284C7).withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: const Color(0xFF0284C7)),
-                                ),
-                                child: Text(
-                                  operationTitle,
-                                  style: const TextStyle(
-                                    color: Color(0xFF38BDF8),
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.bold,
+                          Expanded(
+                            child: Wrap(
+                              spacing: 8,
+                              runSpacing: 6,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF0284C7).withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: const Color(0xFF0284C7)),
+                                  ),
+                                  child: Text(
+                                    operationTitle,
+                                    style: const TextStyle(
+                                      color: Color(0xFF38BDF8),
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: isSuccess
-                                      ? const Color(0xFF10B981).withValues(alpha: 0.2)
-                                      : const Color(0xFFEF4444).withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  'HTTP $statusCode ${isSuccess ? '✅' : '❌'}',
-                                  style: TextStyle(
-                                    color: isSuccess ? const Color(0xFF34D399) : const Color(0xFFF87171),
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w900,
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: isSuccess
+                                        ? const Color(0xFF10B981).withValues(alpha: 0.2)
+                                        : const Color(0xFFEF4444).withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    'HTTP $statusCode ${isSuccess ? '✅' : '❌'}',
+                                    style: TextStyle(
+                                      color: isSuccess ? const Color(0xFF34D399) : const Color(0xFFF87171),
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w900,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                           IconButton(
                             icon: const Icon(Icons.close_rounded, color: Colors.white70),

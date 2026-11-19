@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/services/service_locator.dart';
 
@@ -17,6 +19,7 @@ class _AdminAppUpdatePageState extends State<AdminAppUpdatePage> {
   late final TextEditingController _buildNumberController;
   late final TextEditingController _titleController;
   late final TextEditingController _notesController;
+  late final TextEditingController _apkFileController;
   late final TextEditingController _urlController;
 
   bool _isForceUpdate = false;
@@ -31,6 +34,7 @@ class _AdminAppUpdatePageState extends State<AdminAppUpdatePage> {
     _notesController = TextEditingController(
       text: 'يتوفر إصدار جديد يحتوي على تحسينات هامة وسرعة أكبر في تنفيذ الطلبات وإصلاحات عامة.',
     );
+    _apkFileController = TextEditingController();
     _urlController = TextEditingController(
       text: 'https://games-backend-c0h7.onrender.com/download',
     );
@@ -43,6 +47,7 @@ class _AdminAppUpdatePageState extends State<AdminAppUpdatePage> {
     _buildNumberController.dispose();
     _titleController.dispose();
     _notesController.dispose();
+    _apkFileController.dispose();
     _urlController.dispose();
     super.dispose();
   }
@@ -59,6 +64,7 @@ class _AdminAppUpdatePageState extends State<AdminAppUpdatePage> {
           _isForceUpdate = data['isForceUpdate'] == true;
           _titleController.text = (data['updateTitle'] ?? 'تحديث جديد متوفر 🚀').toString();
           _notesController.text = (data['updateNotes'] ?? '').toString();
+          _apkFileController.text = (data['apkFileUrl'] ?? '').toString();
           _urlController.text = (data['appDownloadUrl'] ??
                   'https://games-backend-c0h7.onrender.com/download')
               .toString();
@@ -84,6 +90,7 @@ class _AdminAppUpdatePageState extends State<AdminAppUpdatePage> {
     final buildNumber = int.tryParse(_buildNumberController.text.trim()) ?? 1;
     final title = _titleController.text.trim();
     final notes = _notesController.text.trim();
+    final apkUrl = _apkFileController.text.trim();
     final url = _urlController.text.trim();
 
     if (version.isEmpty) {
@@ -106,6 +113,7 @@ class _AdminAppUpdatePageState extends State<AdminAppUpdatePage> {
           'isForceUpdate': _isForceUpdate,
           'updateTitle': title,
           'updateNotes': notes,
+          'apkFileUrl': apkUrl,
           'appDownloadUrl': url,
         },
       );
@@ -675,25 +683,161 @@ class _AdminAppUpdatePageState extends State<AdminAppUpdatePage> {
             ),
           ),
 
-          const SizedBox(height: 18),
+          const SizedBox(height: 20),
+          const Divider(color: Colors.white12),
+          const SizedBox(height: 10),
 
-          // Update / Download URL
-          const Text('رابط التحديث / التحميل (Download URL):',
-              style: TextStyle(color: Colors.white70, fontSize: 12)),
-          const SizedBox(height: 6),
+          // 1. Source APK File Link (Changes frequently)
+          Row(
+            children: [
+              const Icon(Icons.cloud_upload_rounded, color: Color(0xFF38BDF8), size: 18),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'رابط ملف الـ APK الجديد (ميديافاير / جوجل درايف / رابط مباشر):',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'ضع هنا رابط الملف كلما قمت برفع أو تحديث الـ APK. يمكنك تغييره متى شئت بحرية دون أن يتعطل التنزيل أو تتغير روابط المستخدمين.',
+            style: TextStyle(color: Colors.white54, fontSize: 11, height: 1.35),
+          ),
+          const SizedBox(height: 8),
           TextField(
-            controller: _urlController,
-            style: const TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'monospace'),
+            controller: _apkFileController,
+            style: const TextStyle(color: Colors.white, fontSize: 12.5, fontFamily: 'monospace'),
             decoration: InputDecoration(
-              hintText: 'https://games-backend-c0h7.onrender.com/download',
-              hintStyle: const TextStyle(color: Colors.white30),
+              hintText: 'https://www.mediafire.com/file/.../app.apk/file',
+              hintStyle: const TextStyle(color: Colors.white24, fontSize: 11.5),
               prefixIcon: const Icon(Icons.link_rounded, color: Color(0xFF38BDF8), size: 18),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.paste_rounded, color: Colors.white54, size: 18),
+                tooltip: 'لصق من الحافظة',
+                onPressed: () async {
+                  final data = await Clipboard.getData('text/plain');
+                  if (data?.text != null && data!.text!.isNotEmpty) {
+                    setState(() => _apkFileController.text = data.text!.trim());
+                  }
+                },
+              ),
               filled: true,
               fillColor: const Color(0xFF1E293B),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide.none,
               ),
+            ),
+          ),
+
+          const SizedBox(height: 18),
+
+          // 2. Permanent Public Download URL (Fixed & Never Changes)
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF0284C7).withValues(alpha: 0.3)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 18),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'رابط التنزيل الثابت للمستخدمين (Permanent Download URL):',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'هذا الرابط دائم وثابت ولا يتغير أبداً. يتم توجيه جميع المستخدمين في التطبيق والموقع إليه تلقائياً، وهو يقوم بجلب أحدث ملف APK من الرابط أعلاه وتنزيله مباشرة بنقرة واحدة.',
+                  style: TextStyle(color: Colors.white60, fontSize: 11, height: 1.35),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _urlController,
+                  style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 12, fontFamily: 'monospace'),
+                  decoration: InputDecoration(
+                    hintText: 'https://games-backend-c0h7.onrender.com/download',
+                    hintStyle: const TextStyle(color: Colors.white24),
+                    prefixIcon: const Icon(Icons.download_rounded, color: Color(0xFF10B981), size: 18),
+                    filled: true,
+                    fillColor: const Color(0xFF0F172A),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Colors.white12),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton.icon(
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF38BDF8),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      ),
+                      onPressed: () {
+                        final text = _urlController.text.trim();
+                        if (text.isNotEmpty) {
+                          Clipboard.setData(ClipboardData(text: text));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('تم نسخ رابط التنزيل الثابت إلى الحافظة 📋'),
+                              backgroundColor: Color(0xFF0284C7),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.copy_rounded, size: 15),
+                      label: const Text('نسخ الرابط الثابت', style: TextStyle(fontSize: 11.5)),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF10B981),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      onPressed: () async {
+                        final text = _urlController.text.trim();
+                        if (text.isNotEmpty) {
+                          final uri = Uri.tryParse(text);
+                          if (uri != null) {
+                            try {
+                              await launchUrl(uri, mode: LaunchMode.externalApplication);
+                            } catch (_) {
+                              await launchUrl(uri);
+                            }
+                          }
+                        }
+                      },
+                      icon: const Icon(Icons.open_in_browser_rounded, size: 15),
+                      label: const Text('تجربة التنزيل الآن 📥', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ],
